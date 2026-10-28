@@ -1,4 +1,45 @@
 {
   "format": 1,
-  "looks": []
+  "looks": [
+    {
+      "added": "2026-10-28",
+      "author": "Maikel Hajiabadi",
+      "auto_tags": [
+        "dark",
+        "glass",
+        "boxed",
+        "glow",
+        "rounded"
+      ],
+      "based_on": null,
+      "built_on": [],
+      "description": "Violet glass with a handwritten touch.",
+      "download_url": "https://github.com/KiwiCanopy/KiwiDesk-Looks/releases/download/looks/purple-dreams.json",
+      "downloads": 0,
+      "file": "looks/purple-dreams/look.json",
+      "font_url": null,
+      "id": "purple-dreams",
+      "image": null,
+      "inspired_by": null,
+      "keywords": [],
+      "kiwidesk_version": "4.0.0",
+      "like_url": "https://github.com/KiwiCanopy/KiwiDesk-Looks/discussions/5",
+      "likes": 0,
+      "look_format": 2,
+      "name": "Purple Dreams",
+      "needs_fonts": [],
+      "tags": [
+        "dark",
+        "glass",
+        "boxed",
+        "glow",
+        "rounded",
+        "script",
+        "pastel",
+        "calm"
+      ],
+      "updated": "2026-10-28",
+      "version": 1
+    }
+  ]
 }
