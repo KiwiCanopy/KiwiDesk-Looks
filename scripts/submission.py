@@ -39,6 +39,8 @@ F_DESCRIPTION = "One-line description"
 F_FONT_URL = "Font download link"
 F_VERSION = "KiwiDesk version"
 F_SCREENSHOT = "Screenshot"
+F_KEYWORDS = "Keywords"
+F_INSPIRED = "Inspired by"
 F_REMOVE_ID = "Look"
 F_REMOVE_NAME = "Credit"
 
@@ -140,6 +142,13 @@ def build_submission(fields, login, staging, fetch=download_screenshot,
     }
     if account is not None:
         meta["submitted_by_id"] = account
+    words = re.split(r"[,\s]+", fields.get(F_KEYWORDS, "").strip().lower())
+    words = [w.lstrip("#") for w in words if w.lstrip("#")]
+    if words:
+        meta["keywords"] = words
+    inspired = fields.get(F_INSPIRED, "").strip()
+    if inspired and inspired != "None":
+        meta["inspired_by"] = inspired
     for key, field in (("font_url", F_FONT_URL),
                        ("kiwidesk_version", F_VERSION)):
         value = fields.get(field, "").strip()

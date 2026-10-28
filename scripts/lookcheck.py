@@ -14,6 +14,8 @@ import re
 import sys
 from pathlib import Path
 
+import looktags
+
 ROOT = Path(__file__).resolve().parent.parent
 SCHEMA = json.loads((ROOT / "schema" / "keys.json").read_text())
 BUILTIN_FONTS = {
@@ -31,8 +33,9 @@ LOOK_BODY_KEYS = {"name", "style", "colors"}
 BASED_ON_KEYS = {"name", "author", "id", "removed"}
 META_KEYS = {
     "tags", "description", "font_url", "submitted_by", "submitted_by_id",
-    "kiwidesk_version",
+    "kiwidesk_version", "keywords", "inspired_by",
 }
+KEYWORD = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 ALLOWED_FILES = {"look.json", "meta.json", "screenshot.png"}
 
 HEX = re.compile(r"^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$")
@@ -203,8 +206,24 @@ def check_meta(data, errors):
         errors.append("tags must list 1 to 5 different tags")
     else:
         for tag in tags:
-            if tag not in allowed:
+            if tag in SCHEMA["auto_tags"]:
+                errors.append(f"{tag} is set automatically; untick it")
+            elif tag not in allowed:
                 errors.append(f"unknown tag: {tag}")
+    keywords = data.get("keywords", [])
+    if (not isinstance(keywords, list) or len(keywords) > 5
+            or len(set(map(str, keywords))) != len(keywords)):
+        errors.append("keywords must list up to 5 different words")
+    else:
+        for word in keywords:
+            if not isinstance(word, str) or len(word) > 24 \
+                    or not KEYWORD.match(word):
+                errors.append(
+                    "keywords use lower-case letters, digits and hyphens")
+                break
+    inspired = data.get("inspired_by")
+    if inspired is not None and inspired not in SCHEMA["inspired_by"]:
+        errors.append("inspired_by must be one of the listed palettes")
     plain_text(data.get("description"), "description", 140, errors)
     url = data.get("font_url")
     if url is not None and (not isinstance(url, str)
@@ -271,6 +290,13 @@ def check_folder(folder):
     meta = load_json(folder / "meta.json", errors)
     if meta is not None:
         check_meta(meta, errors)
+        if isinstance(look, dict) and isinstance(meta, dict) \
+                and "high-contrast" in (meta.get("tags") or []):
+            ratio = looktags.contrast(look)
+            if ratio is None or ratio < looktags.HIGH_CONTRAST_AT:
+                errors.append(
+                    "high-contrast needs the bar's text and fill at 7:1 "
+                    f"or more (this look: {ratio or 0:.1f}:1)")
     shot = folder / "screenshot.png"
     if shot.is_file() and not shot.is_symlink():
         if shot.stat().st_size > MAX_SCREENSHOT:

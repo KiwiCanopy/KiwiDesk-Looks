@@ -47,15 +47,22 @@ is data only: no Lua, no scripts, no links.
 
 ```json
 {
-  "tags": ["dark", "glass"],
+  "tags": ["calm", "pastel"],
   "description": "A calm violet evening.",
+  "keywords": ["lavender", "soft"],
+  "inspired_by": "nord",
   "submitted_by": "your-github-name",
   "kiwidesk_version": "4.1.0",
   "font_url": "https://example.com/the-font"
 }
 ```
 
-`tags` come from `schema/keys.json` ▸ `tags` (one to five).
+`tags` come from `schema/keys.json` ▸ `tags` (one to five): the ones
+a machine can't judge. Tags like dark, glass or rounded
+(`auto_tags`) are added from the look file by CI, so don't list them.
+`keywords` (optional, up to five) are for search only. `inspired_by`
+(optional) names a palette from `schema/keys.json` ▸ `inspired_by`;
+describe, never claim an official port.
 `submitted_by` must be your GitHub account: it decides who may update
 or remove the look. The submission bot also records `submitted_by_id`,
 your account's number, so a renamed account keeps its looks. `font_url` only for a font macOS doesn't ship.
@@ -67,7 +74,15 @@ python3 -m unittest discover tests
 python3 scripts/lookcheck.py
 ```
 
-Don't edit `index.json`: CI rebuilds it after each merge.
+Don't edit `index.json` or `stats.json`: CI rebuilds them after each
+merge and once a day.
+
+## Likes and downloads
+
+After a merge, CI puts each look's file on the `looks` release, where
+GitHub counts its downloads, and opens one discussion per look in the
+"Looks" category, where each account that leaves a positive reaction
+counts as one like (👎 and 😕 never count).
 
 ## Review
 

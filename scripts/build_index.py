@@ -14,10 +14,13 @@ import sys
 from pathlib import Path
 
 import lookcheck
+import looktags
 
 ROOT = lookcheck.ROOT
 INDEX = ROOT / "index.json"
+STATS = ROOT / "stats.json"
 INDEX_FORMAT = 1
+RELEASE = "https://github.com/KiwiCanopy/KiwiDesk-Looks/releases/download/looks"
 
 
 def git(*args):
@@ -38,19 +41,35 @@ def history(folder):
     return dates[-1], dates[0], max(1, len(edits))
 
 
-def entry(folder):
+def load_stats():
+    """Counts and links sync.py keeps; empty before its first run."""
+    if not STATS.is_file():
+        return {}
+    return json.loads(STATS.read_text())
+
+
+def entry(folder, stats=None):
     look = json.loads((folder / "look.json").read_text())
     meta = json.loads((folder / "meta.json").read_text())
     added, updated, version = history(folder)
     rel = f"looks/{folder.name}"
     shot = folder / "screenshot.png"
+    counts = (stats or {}).get(folder.name, {})
+    auto = looktags.auto_tags(look)
     return {
         "id": folder.name,
         "name": look["look"]["name"],
         "author": look["author"],
         "based_on": look.get("based_on"),
         "built_on": [],
-        "tags": meta["tags"],
+        "tags": auto + [t for t in meta["tags"] if t not in auto],
+        "auto_tags": auto,
+        "keywords": meta.get("keywords", []),
+        "inspired_by": meta.get("inspired_by"),
+        "likes": counts.get("likes", 0),
+        "like_url": counts.get("like_url"),
+        "downloads": counts.get("downloads", 0),
+        "download_url": f"{RELEASE}/{folder.name}.json",
         "description": meta["description"],
         "look_format": look["format"],
         "kiwidesk_version": meta.get("kiwidesk_version"),
@@ -73,7 +92,8 @@ def build(looks_dir=None):
         raise ValueError(
             "; ".join(f"{n}: {e[0]}" for n, e in sorted(bad.items()))
         )
-    looks = [entry(looks_dir / name) for name in sorted(report)]
+    stats = load_stats()
+    looks = [entry(looks_dir / name, stats) for name in sorted(report)]
     by_id = {look["id"]: look for look in looks}
     for look in looks:
         parent = (look["based_on"] or {}).get("id")
