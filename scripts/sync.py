@@ -5,8 +5,9 @@ records their counts in stats.json for index.json.
   release tagged `looks`; GitHub counts each download. An update
   re-uploads the file, so the earlier count moves into
   `downloads_base` and the total never drops.
-- Likes: every look has one discussion in the "Looks" category; its
-  ❤️ reactions are the likes, one per account.
+- Likes: every look has one discussion in the "Looks" category; each
+  account that leaves a positive reaction there is one like, however
+  many reactions it leaves.
 
 Run by .github/workflows/gallery.yml with GH_TOKEN set.
 Usage: python3 scripts/sync.py
@@ -27,10 +28,19 @@ REPO = os.environ.get("GITHUB_REPOSITORY", "KiwiCanopy/KiwiDesk-Looks")
 TAG = "looks"
 CATEGORY = "Looks"
 SITE = "https://kiwidesk.kiwicanopy.com/looks/"
+# Reactions that count as a like; 👎 and 😕 never do.
+POSITIVE = {"HEART", "THUMBS_UP", "HOORAY", "ROCKET", "LAUGH", "EYES"}
 
 
 def file_sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def count_likes(reactions):
+    """Distinct accounts with a positive reaction; reactions is a list
+    of {"content", "user": {"login"} or None}."""
+    return len({r["user"]["login"].lower() for r in reactions
+                if r.get("user") and r.get("content") in POSITIVE})
 
 
 def plan_assets(looks, assets, stats):
@@ -76,8 +86,8 @@ def like_body(name, author, ident):
     return (
         f"{marker(ident)}\n"
         f"**{plain(name)}** by {plain(author)}\n\n"
-        f"Like this look by giving this post a ❤️. Only ❤️ counts, "
-        f"one per account.\n\n"
+        f"Leave a ❤️ or 👍 on this post to like the look. Each account "
+        f"counts once.\n\n"
         f"See it in the gallery: {SITE}#{ident}"
     )
 
@@ -205,15 +215,27 @@ def sync_likes(looks, stats):
             entry["discussion"] = found["number"]
             entry["like_url"] = found["url"]
             save(stats)
-        owner, name = REPO.split("/")
+        entry["likes"] = count_likes(reactions_of(entry["discussion"]))
+        save(stats)
+
+
+def reactions_of(number):
+    """Every reaction on a discussion, page by page."""
+    owner, name = REPO.split("/")
+    out, after = [], ""
+    while True:
         data = graphql(
-            "query($owner:String!,$name:String!,$n:Int!){repository("
-            "owner:$owner,name:$name){discussion(number:$n){"
-            "reactionGroups{content reactors{totalCount}}}}}",
-            owner=owner, name=name, n=entry["discussion"])
-        groups = data["repository"]["discussion"]["reactionGroups"]
-        entry["likes"] = next((g["reactors"]["totalCount"] for g in groups
-                               if g["content"] == "HEART"), 0)
+            "query($owner:String!,$name:String!,$n:Int!,$after:String)"
+            "{repository(owner:$owner,name:$name){discussion(number:$n){"
+            "reactions(first:100,after:$after){pageInfo{hasNextPage "
+            "endCursor}nodes{content user{login}}}}}}",
+            owner=owner, name=name, n=number,
+            **({"after": after} if after else {}))
+        page = data["repository"]["discussion"]["reactions"]
+        out += page["nodes"]
+        if not page["pageInfo"]["hasNextPage"]:
+            return out
+        after = page["pageInfo"]["endCursor"]
 
 
 def main():

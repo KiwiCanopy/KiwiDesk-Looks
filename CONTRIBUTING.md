@@ -81,7 +81,8 @@ merge and once a day.
 
 After a merge, CI puts each look's file on the `looks` release, where
 GitHub counts its downloads, and opens one discussion per look in the
-"Looks" category, where a ❤️ is a like.
+"Looks" category, where each account that leaves a positive reaction
+counts as one like (👎 and 😕 never count).
 
 ## Review
 

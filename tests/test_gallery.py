@@ -527,6 +527,16 @@ class SyncPlanTests(unittest.TestCase):
         self.assertNotIn("evil.com", body)
         self.assertIn("<!-- look:dusk -->", body)
 
+    def test_likes_count_accounts_not_clicks(self):
+        def r(content, login):
+            return {"content": content,
+                    "user": {"login": login} if login else None}
+        reactions = [r("HEART", "anna"), r("THUMBS_UP", "anna"),
+                     r("ROCKET", "Maya"), r("HEART", "maya"),
+                     r("THUMBS_DOWN", "otto"), r("CONFUSED", "lena"),
+                     r("HEART", None)]
+        self.assertEqual(sync.count_likes(reactions), 2)
+
     def test_like_page_asks_for_a_heart(self):
         body = sync.like_body("Dusk", "Anna", "dusk")
         self.assertIn("❤️", body)
