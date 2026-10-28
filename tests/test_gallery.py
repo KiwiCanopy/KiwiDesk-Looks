@@ -310,6 +310,65 @@ class IndexTests(GalleryTestCase):
             build_index.build(self.looks)
 
 
+class ReviewFixTests(GalleryTestCase):
+    def exported(self, name="Dusk"):
+        body = copy.deepcopy(LOOK["look"])
+        body["name"] = name
+        return {"look": body}
+
+    def test_non_latin_name_gets_a_stable_id(self):
+        ident = lookcheck.slug("夜")
+        self.assertTrue(lookcheck.ID.match(ident), ident)
+        self.assertEqual(ident, lookcheck.slug("夜"))
+        result = submission.submit(form(self.exported("夜")), "maya", no_fetch)
+        self.assertTrue(result["ok"], result)
+
+    def test_bundled_name_is_refused_by_slug(self):
+        result = submission.submit(form(self.exported("Glass!")), "maya",
+                                   no_fetch)
+        self.assertFalse(result["ok"])
+        self.assertIn("bundled", result["message"])
+
+    def test_echoed_text_lands_in_a_code_block(self):
+        bad = self.exported()
+        bad["look"]["style"]["@everyone `x`"] = 1
+        result = submission.submit(form(bad), "maya", no_fetch)
+        self.assertTrue(result["message"].startswith("```text\n"))
+        self.assertEqual(result["message"].count("```"), 2)
+
+    def test_account_number_beats_a_reclaimed_login(self):
+        submission.submit(form(self.exported()), "anna", no_fetch, account=7)
+        thief = submission.submit(form(self.exported()), "anna", no_fetch,
+                                  account=8)
+        self.assertFalse(thief["ok"])
+        owner = submission.submit(form(self.exported()), "anna-renamed",
+                                  no_fetch, account=7)
+        self.assertEqual(owner["action"], "update")
+        self.assertFalse(submission.remove(
+            {submission.F_REMOVE_ID: "dusk"}, "anna", 8)["ok"])
+
+    def test_failed_download_is_a_message_not_a_crash(self):
+        text = ("https://github.com/user-attachments/assets/"
+                "00000000-0000-0000-0000-000000000000")
+        import urllib.request
+        saved = urllib.request.urlopen
+
+        def refuse(*args, **kwargs):
+            raise OSError("offline")
+        urllib.request.urlopen = refuse
+        try:
+            error = submission.download_screenshot(
+                text, self.root / "shot.png")
+        finally:
+            urllib.request.urlopen = saved
+        self.assertIn("couldn't be downloaded", error)
+
+    def test_tiny_original_never_warns(self):
+        tiny = {"look": {"name": "T", "style": {"border.width": 4},
+                         "colors": {}}}
+        self.assertEqual(looksim.match(tiny, tiny), 0.0)
+
+
 class FormLabelTests(unittest.TestCase):
     """submission.py reads the forms by label, so a renamed label in
     .github/ISSUE_TEMPLATE would silently empty that field."""

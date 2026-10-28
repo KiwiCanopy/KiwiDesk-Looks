@@ -14,6 +14,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+# An original setting fewer than this matches nearly anything.
+MIN_SETTINGS = 5
 
 
 def settings(look):
@@ -30,7 +32,7 @@ def settings(look):
 def match(candidate, original):
     """Share of the original's own settings the candidate keeps."""
     own = settings(original)
-    if not own:
+    if len(own) < MIN_SETTINGS:
         return 0.0
     theirs = settings(candidate)
     same = sum(1 for key, value in own.items() if theirs.get(key) == value)
@@ -58,7 +60,7 @@ def removed_looks():
             continue
         text = git("show", f"{sha}^:{line}")
         try:
-            out.append((line.split("/")[1] + " (removed)", json.loads(text)))
+            out.append((line.split("/")[1], json.loads(text), True))
         except ValueError:
             continue
     return out
@@ -70,7 +72,7 @@ def current_looks(skip=None):
         if skip is not None and path.parent.name == skip:
             continue
         try:
-            out.append((path.parent.name, json.loads(path.read_text())))
+            out.append((path.parent.name, json.loads(path.read_text()), False))
         except ValueError:
             continue
     return out
@@ -79,10 +81,12 @@ def current_looks(skip=None):
 def close_matches(candidate, skip=None, threshold=0.9):
     """(id, share) of gallery looks the candidate keeps >= threshold of."""
     hits = []
-    for ident, look in current_looks(skip) + removed_looks():
+    for ident, look, removed in current_looks(skip) + removed_looks():
+        if removed and ident == skip:
+            continue  # its own earlier version, submitted again
         share = match(candidate, look)
         if share >= threshold:
-            hits.append((ident, share))
+            hits.append((ident + (" (removed)" if removed else ""), share))
     return sorted(hits, key=lambda hit: -hit[1])
 
 

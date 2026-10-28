@@ -23,6 +23,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       BODY: ${{ github.event.issue.body }}
       LOGIN: ${{ github.event.issue.user.login }}
+      ACCOUNT: ${{ github.event.issue.user.id }}
       ISSUE: ${{ github.event.issue.number }}
     steps:
       - uses: actions/checkout@v4
@@ -34,7 +35,7 @@ jobs:
       - name: Remove
         run: |
           printf '%s' "$BODY" > "$RUNNER_TEMP/body.md"
-          python3 scripts/submission.py remove "$RUNNER_TEMP/body.md" "$LOGIN" "$RUNNER_TEMP/result.json"
+          python3 scripts/submission.py remove "$RUNNER_TEMP/body.md" "$LOGIN" "$ACCOUNT" "$RUNNER_TEMP/result.json"
           if [ "$(jq -r .ok "$RUNNER_TEMP/result.json")" != "true" ]; then
             jq -r .message "$RUNNER_TEMP/result.json" > "$RUNNER_TEMP/comment.md"
             gh issue comment "$ISSUE" --body-file "$RUNNER_TEMP/comment.md"

@@ -5,8 +5,8 @@ as data, and only ever written into looks/<id>/ after the id
 passes lookcheck's pattern. Nothing from it reaches a shell.
 
 Usage:
-  submission.py submit <body-file> <login> <result-file>
-  submission.py remove <body-file> <login> <result-file>
+  submission.py submit <body-file> <login> <account-id> <result-file>
+  submission.py remove <body-file> <login> <account-id> <result-file>
 
 Writes a JSON result {"ok", "id", "action", "message"} that the
 workflow turns into a comment, a commit and a pull request.
@@ -16,6 +16,7 @@ import json
 import re
 import shutil
 import sys
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -99,8 +100,11 @@ def download_screenshot(text, target):
         )
     request = urllib.request.Request(match.group(0),
                                      headers={"User-Agent": "kiwidesk-looks"})
-    with urllib.request.urlopen(request, timeout=30) as response:
-        data = response.read(lookcheck.MAX_SCREENSHOT + 1)
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            data = response.read(lookcheck.MAX_SCREENSHOT + 1)
+    except (urllib.error.URLError, OSError):
+        return "the screenshot couldn't be downloaded; attach it again"
     if len(data) > lookcheck.MAX_SCREENSHOT:
         return "the screenshot is larger than 2 MB"
     if not data.startswith(lookcheck.PNG_MAGIC):
@@ -109,7 +113,8 @@ def download_screenshot(text, target):
     return None
 
 
-def build_submission(fields, login, staging, fetch=download_screenshot):
+def build_submission(fields, login, staging, fetch=download_screenshot,
+                     account=None):
     """Writes the look folder into staging; returns (id, errors)."""
     try:
         look = json.loads(unfence(fields.get(F_LOOK, "")))
@@ -133,6 +138,8 @@ def build_submission(fields, login, staging, fetch=download_screenshot):
         "description": fields.get(F_DESCRIPTION, "").strip(),
         "submitted_by": login,
     }
+    if account is not None:
+        meta["submitted_by_id"] = account
     for key, field in (("font_url", F_FONT_URL),
                        ("kiwidesk_version", F_VERSION)):
         value = fields.get(field, "").strip()
@@ -154,25 +161,43 @@ def build_submission(fields, login, staging, fetch=download_screenshot):
 
 
 def owner_of(ident):
+    """The submitting account's meta, or None for a free id."""
     meta = LOOKS / ident / "meta.json"
     if not meta.is_file():
         return None
-    return json.loads(meta.read_text()).get("submitted_by")
+    return json.loads(meta.read_text())
 
 
-def submit(fields, login, fetch=download_screenshot):
+def same_account(meta, login, account):
+    """Matches by account number where both sides have one, since a
+    renamed login can be claimed by someone else."""
+    if account is not None and meta.get("submitted_by_id") is not None:
+        return meta["submitted_by_id"] == account
+    return str(meta.get("submitted_by", "")).lower() == login.lower()
+
+
+def quoted(errors):
+    """Errors as a code block: they echo submitted text, which must not
+    render as mentions, links or markup in the bot's comment."""
+    lines = [e.replace("`", "'") for e in errors]
+    return "```text\n" + "\n".join(lines) + "\n```"
+
+
+def submit(fields, login, fetch=download_screenshot, account=None):
     staging = ROOT / ".staging"
     shutil.rmtree(staging, ignore_errors=True)
     try:
-        ident, errors = build_submission(fields, login, staging, fetch)
+        ident, errors = build_submission(fields, login, staging, fetch,
+                                         account)
         if errors:
             return {"ok": False, "id": ident, "action": "none",
-                    "message": "\n".join(f"- {e}" for e in errors)}
+                    "message": quoted(errors)}
         owner = owner_of(ident)
-        if owner is not None and owner.lower() != login.lower():
+        if owner is not None and not same_account(owner, login, account):
             return {"ok": False, "id": ident, "action": "none",
-                    "message": f"- a look named like this already exists "
-                               f"(looks/{ident}); pick another name"}
+                    "message": quoted([f"a look named like this already "
+                                       f"exists (looks/{ident}); pick "
+                                       f"another name"])}
         action = "update" if owner is not None else "add"
         target = LOOKS / ident
         shutil.rmtree(target, ignore_errors=True)
@@ -188,17 +213,17 @@ def submit(fields, login, fetch=download_screenshot):
         shutil.rmtree(staging, ignore_errors=True)
 
 
-def remove(fields, login):
+def remove(fields, login, account=None):
     ident = fields.get(F_REMOVE_ID, "").strip().rstrip("/").split("/")[-1]
     ident = ident.lower()
     if not lookcheck.ID.match(ident) or not (LOOKS / ident).is_dir():
         return {"ok": False, "id": None, "action": "none",
-                "message": "- no gallery look has that id"}
+                "message": "No gallery look has that id."}
     owner = owner_of(ident)
-    if owner is None or owner.lower() != login.lower():
+    if owner is None or not same_account(owner, login, account):
         return {"ok": False, "id": ident, "action": "none",
-                "message": "- only the account that submitted this look can "
-                           "remove it here; please use Report a look"}
+                "message": "Only the account that submitted this look can "
+                           "remove it here. Please use Report a look."}
     drop_name = bool(checked(fields.get(F_REMOVE_NAME, "")))
     renamed = []
     if drop_name:
@@ -215,10 +240,11 @@ def remove(fields, login):
 
 
 def main(argv):
-    mode, body_file, login, result_file = argv
+    mode, body_file, login, account, result_file = argv
+    account = int(account)
     fields = sections(Path(body_file).read_text(encoding="utf-8"))
-    result = submit(fields, login) if mode == "submit" \
-        else remove(fields, login)
+    result = submit(fields, login, account=account) if mode == "submit" \
+        else remove(fields, login, account)
     Path(result_file).write_text(json.dumps(result))
     return 0
 

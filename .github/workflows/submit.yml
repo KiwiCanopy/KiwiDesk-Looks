@@ -25,6 +25,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       BODY: ${{ github.event.issue.body }}
       LOGIN: ${{ github.event.issue.user.login }}
+      ACCOUNT: ${{ github.event.issue.user.id }}
       ISSUE: ${{ github.event.issue.number }}
     steps:
       - uses: actions/checkout@v4
@@ -36,15 +37,20 @@ jobs:
       - name: Build the look folder
         run: |
           printf '%s' "$BODY" > "$RUNNER_TEMP/body.md"
-          python3 scripts/submission.py submit "$RUNNER_TEMP/body.md" "$LOGIN" "$RUNNER_TEMP/result.json"
+          python3 scripts/submission.py submit "$RUNNER_TEMP/body.md" "$LOGIN" "$ACCOUNT" "$RUNNER_TEMP/result.json"
       - name: Report problems
+        if: always()
         run: |
-          ok="$(jq -r .ok "$RUNNER_TEMP/result.json")"
+          result="$RUNNER_TEMP/result.json"
+          if [ ! -s "$result" ]; then
+            echo '{"ok": false, "message": "Something went wrong on my side. I will look into it."}' > "$result"
+          fi
+          ok="$(jq -r .ok "$result")"
           [ "$ok" = "true" ] && exit 0
           {
             echo "Thanks! The look couldn't be added yet:"
             echo
-            jq -r .message "$RUNNER_TEMP/result.json"
+            jq -r .message "$result"
             echo
             echo "Edit this issue to fix it, and I'll check again."
           } > "$RUNNER_TEMP/comment.md"
@@ -54,12 +60,24 @@ jobs:
         run: |
           id="$(jq -r .id "$RUNNER_TEMP/result.json")"
           [[ "$id" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]] || exit 1
-          python3 scripts/build_index.py
           branch="submission/$id"
+          # A pending submission of this id belongs to its own account.
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null; then
+            git fetch -q origin "$branch"
+            pending="$(git show "FETCH_HEAD:looks/$id/meta.json" | jq -r '.submitted_by_id // empty')"
+            if [ -n "$pending" ] && [ "$pending" != "$ACCOUNT" ]; then
+              gh issue comment "$ISSUE" --body "Thanks! Someone else's look with this name is waiting for review. Please pick another name and edit this issue."
+              exit 1
+            fi
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -B "$branch"
-          git add "looks/$id" index.json
+          git add "looks/$id"
+          if git diff --cached --quiet; then
+            gh issue comment "$ISSUE" --body "This look is the same as the one already in the gallery, so there's nothing to update."
+            exit 0
+          fi
           git commit -m "feat: $(jq -r .action "$RUNNER_TEMP/result.json") look $id (#$ISSUE)"
           git push --force origin "$branch"
           {
@@ -72,11 +90,11 @@ jobs:
               echo "**Copy warning** (for review, not a verdict):$close"
             fi
           } > "$RUNNER_TEMP/pr.md"
+          gh workflow run validate.yml --ref "$branch"
           if gh pr view "$branch" --json state --jq .state 2>/dev/null | grep -q OPEN; then
             gh pr edit "$branch" --body-file "$RUNNER_TEMP/pr.md"
           else
             gh pr create --head "$branch" --base main \
               --title "Look: $id" --body-file "$RUNNER_TEMP/pr.md"
+            gh issue comment "$ISSUE" --body "Thanks! Your look passed the checks and is waiting for review."
           fi
-          gh workflow run validate.yml --ref "$branch"
-          gh issue comment "$ISSUE" --body "Thanks! Your look passed the checks and is waiting for review."

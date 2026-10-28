@@ -57,7 +57,8 @@ is data only: no Lua, no scripts, no links.
 
 `tags` come from `schema/keys.json` ▸ `tags` (one to five).
 `submitted_by` must be your GitHub account: it decides who may update
-or remove the look. `font_url` only for a font macOS doesn't ship.
+or remove the look. The submission bot also records `submitted_by_id`,
+your account's number, so a renamed account keeps its looks. `font_url` only for a font macOS doesn't ship.
 
 ## Check before you push
 

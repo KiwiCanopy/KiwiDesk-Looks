@@ -8,6 +8,7 @@ submitter can act on; an empty list means the folder is fine.
 Usage: python3 scripts/lookcheck.py [looks/<id> ...]
 """
 
+import hashlib
 import json
 import re
 import sys
@@ -29,7 +30,8 @@ LOOK_KEYS = {"format", "author", "based_on", "look"}
 LOOK_BODY_KEYS = {"name", "style", "colors"}
 BASED_ON_KEYS = {"name", "author", "id", "removed"}
 META_KEYS = {
-    "tags", "description", "font_url", "submitted_by", "kiwidesk_version",
+    "tags", "description", "font_url", "submitted_by", "submitted_by_id",
+    "kiwidesk_version",
 }
 ALLOWED_FILES = {"look.json", "meta.json", "screenshot.png"}
 
@@ -45,7 +47,11 @@ MAX_LOOK_FILE = 64 * 1024
 def slug(name):
     """The folder id a look name files under."""
     text = name.lower().replace("&", " and ")
-    return re.sub(r"[^a-z0-9]+", "-", text).strip("-")
+    ident = re.sub(r"[^a-z0-9]+", "-", text).strip("-")
+    if ident:
+        return ident
+    # A name with no Latin letters or digits ("夜") still needs an id.
+    return "look-" + hashlib.sha1(name.strip().encode()).hexdigest()[:8]
 
 
 def plain_text(value, field, limit, errors, required=True):
@@ -153,7 +159,7 @@ def check_body(data, errors):
         errors.append(f"look has an unknown key: {key}")
     plain_text(body.get("name"), "look name", 40, errors)
     if isinstance(body.get("name"), str):
-        if body["name"].strip().lower() in BUNDLED_NAMES:
+        if slug(body["name"]) in BUNDLED_NAMES:
             errors.append(
                 f"\"{body['name']}\" is a look bundled with KiwiDesk; "
                 "pick another name"
@@ -208,6 +214,10 @@ def check_meta(data, errors):
     login = data.get("submitted_by")
     if not isinstance(login, str) or not LOGIN.match(login):
         errors.append("submitted_by must be a GitHub account name")
+    account = data.get("submitted_by_id")
+    if account is not None and (not isinstance(account, int)
+                                or isinstance(account, bool) or account < 1):
+        errors.append("submitted_by_id must be a GitHub account number")
     version = data.get("kiwidesk_version")
     if version is not None and (not isinstance(version, str)
                                 or not VERSION.match(version)):
