@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: A question or a bug in KiwiDesk itself
+    url: https://github.com/KiwiCanopy/KiwiDesk/issues
+    about: The app has its own issue tracker.

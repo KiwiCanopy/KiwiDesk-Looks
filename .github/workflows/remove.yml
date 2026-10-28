@@ -1,0 +1,52 @@
+# Removes a look when its own submitter asks. Anyone else is pointed
+# at "Report a look". Pushing with GITHUB_TOKEN starts no index run,
+# so this job rebuilds index.json itself.
+name: Removal
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: index
+  cancel-in-progress: false
+
+jobs:
+  remove:
+    if: contains(github.event.issue.labels.*.name, 'remove-look') && github.event.issue.state == 'open'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BODY: ${{ github.event.issue.body }}
+      LOGIN: ${{ github.event.issue.user.login }}
+      ACCOUNT: ${{ github.event.issue.user.id }}
+      ISSUE: ${{ github.event.issue.number }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Remove
+        run: |
+          printf '%s' "$BODY" > "$RUNNER_TEMP/body.md"
+          python3 scripts/submission.py remove "$RUNNER_TEMP/body.md" "$LOGIN" "$ACCOUNT" "$RUNNER_TEMP/result.json"
+          if [ "$(jq -r .ok "$RUNNER_TEMP/result.json")" != "true" ]; then
+            jq -r .message "$RUNNER_TEMP/result.json" > "$RUNNER_TEMP/comment.md"
+            gh issue comment "$ISSUE" --body-file "$RUNNER_TEMP/comment.md"
+            exit 0
+          fi
+          id="$(jq -r .id "$RUNNER_TEMP/result.json")"
+          [[ "$id" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]] || exit 1
+          python3 scripts/build_index.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A looks index.json
+          git commit -m "chore: remove look $id at its author's request (#$ISSUE)"
+          git push
+          gh issue close "$ISSUE" --comment "Removed. New downloads have stopped; copies people already have stay theirs."

@@ -1,0 +1,81 @@
+name: Submit a look
+description: Share a KiwiDesk look with everyone. A bot checks it and opens a pull request.
+title: "Look: "
+labels: [submit-look]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for sharing! In KiwiDesk, choose **Save current look as…**, then right-click the saved look and choose **Export…**. Open the file in a text editor and paste all of it below.
+
+        To update a look you shared before, submit it again under the same name from this account.
+  - type: textarea
+    id: look
+    attributes:
+      label: Look file
+      description: The whole exported file, starting with {.
+      render: json
+    validations:
+      required: true
+  - type: input
+    id: author
+    attributes:
+      label: Your name as the author
+      description: Shown on the gallery card. Leave empty to use your GitHub name.
+  - type: input
+    id: based_on
+    attributes:
+      label: Based on
+      description: If your look started from someone else's, name it here, e.g. "Dusk by Anna", or paste its gallery link. If your look started from someone else's and still matches about half of its settings, the app credits them. Remove this if you rebuilt it yourself.
+  - type: checkboxes
+    id: tags
+    attributes:
+      label: Tags
+      description: Pick one to five.
+      options:
+        - label: dark
+        - label: light
+        - label: minimal
+        - label: colorful
+        - label: glass
+        - label: boxed
+        - label: vertical
+        - label: bottom
+        - label: pastel
+        - label: high-contrast
+        - label: monochrome
+        - label: playful
+        - label: calm
+  - type: input
+    id: description
+    attributes:
+      label: One-line description
+      description: Up to 140 characters, no links.
+    validations:
+      required: true
+  - type: input
+    id: font_url
+    attributes:
+      label: Font download link
+      description: Only if your look uses a font that doesn't ship with macOS. An https link where people can get it.
+  - type: input
+    id: version
+    attributes:
+      label: KiwiDesk version
+      description: KiwiDesk ▸ About, e.g. 4.1.0.
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot
+      description: Optional. Paste or drag a PNG here (2 MB at most). Without one, the gallery draws a preview of your look. Check that it shows nothing private, like notes, mail, chats or names.
+  - type: checkboxes
+    id: consent
+    attributes:
+      label: Before you send
+      options:
+        - label: I made this look, or I credited the look it started from above.
+          required: true
+        - label: I share this look under CC BY 4.0. If I remove it later, copies people already downloaded stay theirs to use.
+          required: true
+        - label: My screenshot, if any, shows nothing private and nothing I may not share.
+          required: true

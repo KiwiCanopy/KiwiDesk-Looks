@@ -1,0 +1,22 @@
+name: Remove my look
+description: Take down a look you submitted. Only works from the account that submitted it.
+title: "Remove: "
+labels: [remove-look]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Removing a look stops new downloads. Copies people already have stay theirs, because an install is a copy and CC BY can't be taken back.
+  - type: input
+    id: look
+    attributes:
+      label: Look
+      description: Its folder name (e.g. purple-dreams) or its gallery link.
+    validations:
+      required: true
+  - type: checkboxes
+    id: credit
+    attributes:
+      label: Credit
+      options:
+        - label: Also remove my name from gallery looks built on it. They will say "based on a removed look".

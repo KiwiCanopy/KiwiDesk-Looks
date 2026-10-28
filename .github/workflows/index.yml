@@ -1,0 +1,36 @@
+# Rebuilds index.json after a merge. Its commit uses GITHUB_TOKEN,
+# so it starts no further workflow run.
+name: Index
+
+on:
+  push:
+    branches: [main]
+    paths: ["looks/**", "schema/**", "scripts/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: index
+  cancel-in-progress: false
+
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python3 scripts/build_index.py
+      - name: Commit when changed
+        run: |
+          git diff --quiet -- index.json && exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.json
+          git commit -m "chore: rebuild index.json"
+          git push
