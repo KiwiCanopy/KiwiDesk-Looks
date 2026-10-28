@@ -1,0 +1,27 @@
+name: Report a look
+description: Something wrong with a look? Private data in a screenshot, a copy without credit, or anything else. I read every report.
+title: "Report: "
+labels: [report-look]
+body:
+  - type: input
+    id: look
+    attributes:
+      label: Look
+      description: Its folder name or its gallery link.
+    validations:
+      required: true
+  - type: dropdown
+    id: reason
+    attributes:
+      label: What's wrong
+      options:
+        - Private data in the screenshot
+        - A copy of my look without credit
+        - It doesn't work in KiwiDesk
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details

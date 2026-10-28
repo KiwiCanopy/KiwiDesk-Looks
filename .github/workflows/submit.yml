@@ -1,0 +1,82 @@
+# Turns a "Submit a look" issue into a pull request. The issue body
+# is untrusted: it reaches the script as a file through env, never
+# through ${{ }} inside a shell line.
+name: Submission
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: write
+
+concurrency:
+  group: submission-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  submit:
+    if: contains(github.event.issue.labels.*.name, 'submit-look') && github.event.issue.state == 'open'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BODY: ${{ github.event.issue.body }}
+      LOGIN: ${{ github.event.issue.user.login }}
+      ISSUE: ${{ github.event.issue.number }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build the look folder
+        run: |
+          printf '%s' "$BODY" > "$RUNNER_TEMP/body.md"
+          python3 scripts/submission.py submit "$RUNNER_TEMP/body.md" "$LOGIN" "$RUNNER_TEMP/result.json"
+      - name: Report problems
+        run: |
+          ok="$(jq -r .ok "$RUNNER_TEMP/result.json")"
+          [ "$ok" = "true" ] && exit 0
+          {
+            echo "Thanks! The look couldn't be added yet:"
+            echo
+            jq -r .message "$RUNNER_TEMP/result.json"
+            echo
+            echo "Edit this issue to fix it, and I'll check again."
+          } > "$RUNNER_TEMP/comment.md"
+          gh issue comment "$ISSUE" --body-file "$RUNNER_TEMP/comment.md"
+          exit 1
+      - name: Open or update the pull request
+        run: |
+          id="$(jq -r .id "$RUNNER_TEMP/result.json")"
+          [[ "$id" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]] || exit 1
+          python3 scripts/build_index.py
+          branch="submission/$id"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$branch"
+          git add "looks/$id" index.json
+          git commit -m "feat: $(jq -r .action "$RUNNER_TEMP/result.json") look $id (#$ISSUE)"
+          git push --force origin "$branch"
+          {
+            echo "Submitted by @$LOGIN in #$ISSUE."
+            echo
+            echo "Closes #$ISSUE"
+            close="$(jq -r '.close // ""' "$RUNNER_TEMP/result.json")"
+            if [ -n "$close" ]; then
+              echo
+              echo "**Copy warning** (for review, not a verdict):$close"
+            fi
+          } > "$RUNNER_TEMP/pr.md"
+          if gh pr view "$branch" --json state --jq .state 2>/dev/null | grep -q OPEN; then
+            gh pr edit "$branch" --body-file "$RUNNER_TEMP/pr.md"
+          else
+            gh pr create --head "$branch" --base main \
+              --title "Look: $id" --body-file "$RUNNER_TEMP/pr.md"
+          fi
+          gh workflow run validate.yml --ref "$branch"
+          gh issue comment "$ISSUE" --body "Thanks! Your look passed the checks and is waiting for review."

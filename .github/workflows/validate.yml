@@ -1,0 +1,42 @@
+# Checks every look on each pull request. A submission PR opened by
+# the bot is dispatched here by submit.yml, since a pull request a
+# workflow opens with GITHUB_TOKEN starts no pull_request run.
+name: Validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Tests
+        run: python3 -m unittest discover tests
+      - name: Check every look
+        run: python3 scripts/lookcheck.py
+      - name: Index builds
+        run: cd scripts && python3 -c "import build_index; build_index.build()"
+      - name: Copy warning
+        # Annotations only: a fork's pull request gets a read-only
+        # token, and the warning is for the reviewer, never a verdict.
+        run: |
+          base="$(git merge-base origin/main HEAD 2>/dev/null || echo HEAD~1)"
+          git diff --name-only --diff-filter=AM "$base" HEAD -- 'looks/*/look.json' |
+          while read -r file; do
+            python3 scripts/looksim.py "$file" | while IFS=$'\t' read -r other share; do
+              echo "::warning file=$file::Close to $other: $share of its settings match"
+              echo "- \`$file\` is close to **$other** ($share)" >> "$GITHUB_STEP_SUMMARY"
+            done
+          done
