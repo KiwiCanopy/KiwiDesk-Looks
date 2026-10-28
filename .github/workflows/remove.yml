@@ -49,6 +49,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A looks index.json
           git commit -m "chore: remove look $id at its author's request (#$ISSUE)"
+          git pull --rebase -q
           git push
           gh workflow run gallery.yml
           gh issue close "$ISSUE" --comment "Removed. New downloads have stopped; copies people already have stay theirs."

@@ -512,12 +512,20 @@ class SyncPlanTests(unittest.TestCase):
         plan = sync.plan_assets(
             {"dusk": "b"}, {"dusk.json": {"id": 7, "downloads": 40}},
             {"dusk": {"asset_sha": "a", "downloads_base": 5}})
-        self.assertEqual(plan, (["dusk"], [7], {"dusk": 45}))
+        self.assertEqual(plan, (["dusk"], [], {"dusk": 45}))
 
     def test_removed_look_loses_its_asset(self):
         plan = sync.plan_assets(
             {}, {"dusk.json": {"id": 7, "downloads": 40}}, {})
         self.assertEqual(plan, ([], [7], {}))
+
+    def test_submitted_text_cannot_mention_link_or_format(self):
+        body = sync.like_body("**Hi** #12 [x](evil.com)", "@team", "dusk")
+        self.assertNotIn("@team", body)
+        self.assertNotIn("#12", body)
+        self.assertNotIn("](", body)
+        self.assertNotIn("evil.com", body)
+        self.assertIn("<!-- look:dusk -->", body)
 
     def test_like_page_asks_for_a_heart(self):
         body = sync.like_body("Dusk", "Anna", "dusk")

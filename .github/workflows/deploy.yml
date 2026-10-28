@@ -19,15 +19,15 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      HOOK: ${{ secrets.CF_PAGES_DEPLOY_HOOK }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Rebuild the site when due
+        env:
+          HOOK: ${{ secrets.CF_PAGES_DEPLOY_HOOK }}
         run: |
-          [ -n "$HOOK" ] || { echo "::error::CF_PAGES_DEPLOY_HOOK is not set"; exit 1; }
+          [ -n "$HOOK" ] || { echo "::warning::CF_PAGES_DEPLOY_HOOK is not set"; exit 0; }
           now="$(date +%s)"
           changed="$(git log -1 --format=%ct -- index.json)"
           if git rev-parse -q --verify refs/tags/deployed >/dev/null; then

@@ -15,6 +15,7 @@ Usage: python3 scripts/sync.py
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -38,8 +39,9 @@ def plan_assets(looks, assets, stats):
     looks:  {id: sha of look.json}
     assets: {asset name: {"id": n, "downloads": n}}
     stats:  {id: {"asset_sha", "downloads_base", ...}}
-    Returns (uploads, deletes, bases): ids to upload, asset ids to
-    delete, and each id's downloads_base after the change.
+    Returns (uploads, deletes, bases): ids to upload (`--clobber`
+    replaces a changed file), orphaned asset ids to delete, and each
+    id's downloads_base after the change.
     """
     uploads, deletes, bases = [], [], {}
     for ident, sha in sorted(looks.items()):
@@ -50,7 +52,6 @@ def plan_assets(looks, assets, stats):
             uploads.append(ident)
         elif entry.get("asset_sha") != sha:
             base += asset["downloads"]
-            deletes.append(asset["id"])
             uploads.append(ident)
         bases[ident] = base
     for name, asset in sorted(assets.items()):
@@ -59,9 +60,22 @@ def plan_assets(looks, assets, stats):
     return uploads, deletes, bases
 
 
+def plain(text):
+    """Submitted text made inert in markdown: no formatting, links,
+    mentions or issue references from a bot-written post."""
+    text = re.sub(r"([\\`*_{}\[\]()<>!|~])", r"\\\1", str(text))
+    text = re.sub(r"([@#])", "\\1\u200b", text)
+    return re.sub(r"\.(?=\S)", ".\u200b", text)
+
+
+def marker(ident):
+    return f"<!-- look:{ident} -->"
+
+
 def like_body(name, author, ident):
     return (
-        f"**{name}** by {author}\n\n"
+        f"{marker(ident)}\n"
+        f"**{plain(name)}** by {plain(author)}\n\n"
         f"Like this look by giving this post a ❤️. Only ❤️ counts, "
         f"one per account.\n\n"
         f"See it in the gallery: {SITE}#{ident}"
@@ -96,6 +110,12 @@ def release_assets():
             for a in release.get("assets", [])}
 
 
+def save(stats):
+    """Written after every change on GitHub, so a crash or a failed
+    push never loses a discussion number or a carried count."""
+    STATS.write_text(json.dumps(stats, indent=2, sort_keys=True) + "\n")
+
+
 def sync_assets(looks, stats):
     assets = release_assets()
     uploads, deletes, bases = plan_assets(looks, assets, stats)
@@ -106,7 +126,12 @@ def sync_assets(looks, stats):
             copy = Path(tmp) / f"{ident}.json"
             copy.write_bytes((ROOT / "looks" / ident / "look.json")
                              .read_bytes())
+            entry = stats.setdefault(ident, {})
+            entry["downloads_base"] = bases[ident]
+            save(stats)
             gh("release", "upload", TAG, str(copy), "-R", REPO, "--clobber")
+            entry["asset_sha"] = looks[ident]
+            save(stats)
     assets = release_assets()
     for ident, sha in looks.items():
         entry = stats.setdefault(ident, {})
@@ -114,6 +139,32 @@ def sync_assets(looks, stats):
         entry["downloads_base"] = bases[ident]
         current = assets.get(f"{ident}.json", {}).get("downloads", 0)
         entry["downloads"] = bases[ident] + current
+
+
+def existing_discussions(category):
+    """{look id: (number, url)} from the markers in the category."""
+    owner, name = REPO.split("/")
+    data = graphql(
+        "query($owner:String!,$name:String!,$cat:ID!){repository(owner:"
+        "$owner,name:$name){discussions(first:100,categoryId:$cat){nodes{"
+        "number url body}}}}", owner=owner, name=name, cat=category)
+    found = {}
+    for node in data["repository"]["discussions"]["nodes"]:
+        match = re.search(r"<!-- look:([a-z0-9-]+) -->", node["body"])
+        if match:
+            found[match.group(1)] = (node["number"], node["url"])
+    return found
+
+
+def close_discussion(number):
+    owner, name = REPO.split("/")
+    data = graphql(
+        "query($owner:String!,$name:String!,$n:Int!){repository(owner:"
+        "$owner,name:$name){discussion(number:$n){id}}}",
+        owner=owner, name=name, n=number)
+    graphql("mutation($id:ID!){closeDiscussion(input:{discussionId:$id,"
+            "reason:OUTDATED}){discussion{id}}}",
+            id=data["repository"]["discussion"]["id"])
 
 
 def category_ids():
@@ -135,8 +186,12 @@ def sync_likes(looks, stats):
         print(f"::warning::No \"{CATEGORY}\" discussion category; "
               "likes are not tracked")
         return
+    known = existing_discussions(category)
     for ident in sorted(looks):
         entry = stats.setdefault(ident, {})
+        if "discussion" not in entry and ident in known:
+            entry["discussion"], entry["like_url"] = known[ident]
+            save(stats)
         if "discussion" not in entry:
             look = json.loads((ROOT / "looks" / ident / "look.json")
                               .read_text())
@@ -149,6 +204,7 @@ def sync_likes(looks, stats):
             found = made["createDiscussion"]["discussion"]
             entry["discussion"] = found["number"]
             entry["like_url"] = found["url"]
+            save(stats)
         owner, name = REPO.split("/")
         data = graphql(
             "query($owner:String!,$name:String!,$n:Int!){repository("
@@ -164,11 +220,21 @@ def main():
     stats = json.loads(STATS.read_text()) if STATS.is_file() else {}
     looks = {p.parent.name: file_sha(p)
              for p in (ROOT / "looks").glob("*/look.json")}
-    for gone in set(stats) - set(looks):
+    for gone in sorted(set(stats) - set(looks)):
+        number = stats[gone].get("discussion")
+        if number is not None:
+            try:
+                close_discussion(number)
+            except RuntimeError as error:
+                print(f"::warning::could not close discussion {number}: "
+                      f"{error}")
         del stats[gone]
-    sync_assets(looks, stats)
-    sync_likes(looks, stats)
-    STATS.write_text(json.dumps(stats, indent=2, sort_keys=True) + "\n")
+        save(stats)
+    try:
+        sync_assets(looks, stats)
+        sync_likes(looks, stats)
+    finally:
+        save(stats)
     return 0
 
 
