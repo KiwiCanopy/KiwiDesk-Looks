@@ -12,6 +12,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 import build_index  # noqa: E402
 import lookcheck  # noqa: E402
 import looksim  # noqa: E402
+import looktags  # noqa: E402
+import sync  # noqa: E402
 import submission  # noqa: E402
 
 LOOK = {
@@ -37,7 +39,7 @@ LOOK = {
         },
     },
 }
-META = {"tags": ["dark", "glass"], "description": "A calm violet evening.",
+META = {"tags": ["calm", "pastel"], "description": "A calm violet evening.",
         "submitted_by": "anna"}
 
 
@@ -117,7 +119,7 @@ class LookcheckTests(unittest.TestCase):
                       self.errors(meta=meta))
 
     def test_tags_must_be_known(self):
-        meta = dict(META, tags=["dark", "spicy"])
+        meta = dict(META, tags=["calm", "spicy"])
         self.assertIn("unknown tag: spicy", self.errors(meta=meta))
 
     def test_font_url_must_be_https(self):
@@ -194,7 +196,7 @@ def form(look, **extra):
     fields = {
         submission.F_LOOK: "```json\n" + json.dumps(look) + "\n```",
         submission.F_AUTHOR: "",
-        submission.F_TAGS: "- [x] dark\n- [ ] light\n- [x] glass",
+        submission.F_TAGS: "- [x] calm\n- [ ] warm\n- [x] pastel",
         submission.F_DESCRIPTION: "A calm violet evening.",
         submission.F_SCREENSHOT: "",
     }
@@ -225,7 +227,7 @@ class SubmissionTests(GalleryTestCase):
         self.assertEqual(look["format"], 2)
         self.assertEqual(look["author"], "maya")
         meta = json.loads((self.looks / "dusk" / "meta.json").read_text())
-        self.assertEqual(meta["tags"], ["dark", "glass"])
+        self.assertEqual(meta["tags"], ["calm", "pastel"])
         self.assertEqual(meta["submitted_by"], "maya")
 
     def test_invalid_submission_reports_and_writes_nothing(self):
@@ -417,6 +419,112 @@ class PendingTests(unittest.TestCase):
                          [("dusk", looksim.CURRENT)])
 
 
+class TagTests(unittest.TestCase):
+    def look(self, **style):
+        look = copy.deepcopy(LOOK)
+        look["look"]["style"].update(style)
+        return look
+
+    def test_auto_tags_read_the_file(self):
+        self.assertEqual(looktags.auto_tags(LOOK), ["dark", "glass"])
+        look = self.look(**{
+            "kiwishelf.corner_roundness": 100,
+            "kiwishelf.background_style": "boxed",
+            "border.glow": True, "space_bar.edge": "left",
+            "app_bar.edge": "bottom", "kiwishelf.thickness": 28,
+            "gap.global": {"inner": {"horizontal": 0, "vertical": 0},
+                           "outer": {"top": 0, "bottom": 0, "left": 0,
+                                     "right": 0}}})
+        self.assertEqual(
+            looktags.auto_tags(look),
+            ["dark", "glass", "boxed", "glow", "rounded", "vertical",
+             "bottom", "slim", "gapless"])
+
+    def test_light_square_monochrome(self):
+        look = self.look(**{"border.corner_style": "square",
+                            "kiwishelf.liquid_glass": False})
+        look["look"]["colors"] = {"kiwishelf.fill_color": "#F0F0F0",
+                                  "kiwishelf.item_color": "#111111",
+                                  "sticky.color": ""}
+        self.assertEqual(looktags.auto_tags(look),
+                         ["light", "square", "monochrome"])
+        self.assertGreater(looktags.contrast(look), 7)
+
+    def test_schema_order_matches(self):
+        self.assertEqual(lookcheck.SCHEMA["auto_tags"], looktags.ORDER)
+        self.assertFalse(set(lookcheck.SCHEMA["auto_tags"])
+                         & set(lookcheck.SCHEMA["tags"]))
+
+    def test_an_auto_tag_cannot_be_ticked(self):
+        errors = []
+        lookcheck.check_meta(dict(META, tags=["dark"]), errors)
+        self.assertIn("dark is set automatically; untick it", errors)
+
+    def test_high_contrast_is_checked(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            meta = dict(META, tags=["high-contrast"])
+            folder = write_folder(tmp, "dusk", meta=meta)
+            errors = lookcheck.check_folder(folder)
+        self.assertTrue(any("7:1" in e for e in errors), errors)
+
+    def test_keywords_and_inspired_by(self):
+        errors = []
+        lookcheck.check_meta(dict(META, keywords=["lavender", "Soft!"],
+                                  inspired_by="monokai"), errors)
+        self.assertEqual(len(errors), 2, errors)
+        errors = []
+        lookcheck.check_meta(dict(META, keywords=["lavender", "soft"],
+                                  inspired_by="gruvbox"), errors)
+        self.assertEqual(errors, [])
+
+
+class SubmissionFieldTests(GalleryTestCase):
+    def test_keywords_and_inspired_by_are_read(self):
+        fields = form({"look": copy.deepcopy(LOOK["look"])}, **{
+            submission.F_KEYWORDS: "Lavender, #soft  dreamy",
+            submission.F_INSPIRED: "nord"})
+        result = submission.submit(fields, "maya", no_fetch)
+        self.assertTrue(result["ok"], result)
+        meta = json.loads((self.looks / "dusk" / "meta.json").read_text())
+        self.assertEqual(meta["keywords"], ["lavender", "soft", "dreamy"])
+        self.assertEqual(meta["inspired_by"], "nord")
+
+    def test_inspired_by_none_is_left_out(self):
+        fields = form({"look": copy.deepcopy(LOOK["look"])}, **{
+            submission.F_INSPIRED: "None"})
+        submission.submit(fields, "maya", no_fetch)
+        meta = json.loads((self.looks / "dusk" / "meta.json").read_text())
+        self.assertNotIn("inspired_by", meta)
+
+
+class SyncPlanTests(unittest.TestCase):
+    def test_new_look_uploads(self):
+        uploads, deletes, bases = sync.plan_assets({"dusk": "a"}, {}, {})
+        self.assertEqual((uploads, deletes, bases), (["dusk"], [], {"dusk": 0}))
+
+    def test_unchanged_look_keeps_its_asset(self):
+        plan = sync.plan_assets(
+            {"dusk": "a"}, {"dusk.json": {"id": 7, "downloads": 40}},
+            {"dusk": {"asset_sha": "a", "downloads_base": 5}})
+        self.assertEqual(plan, ([], [], {"dusk": 5}))
+
+    def test_update_carries_the_count_forward(self):
+        plan = sync.plan_assets(
+            {"dusk": "b"}, {"dusk.json": {"id": 7, "downloads": 40}},
+            {"dusk": {"asset_sha": "a", "downloads_base": 5}})
+        self.assertEqual(plan, (["dusk"], [7], {"dusk": 45}))
+
+    def test_removed_look_loses_its_asset(self):
+        plan = sync.plan_assets(
+            {}, {"dusk.json": {"id": 7, "downloads": 40}}, {})
+        self.assertEqual(plan, ([], [7], {}))
+
+    def test_like_page_asks_for_a_heart(self):
+        body = sync.like_body("Dusk", "Anna", "dusk")
+        self.assertIn("❤️", body)
+        self.assertIn("#dusk", body)
+
+
 class FormLabelTests(unittest.TestCase):
     """submission.py reads the forms by label, so a renamed label in
     .github/ISSUE_TEMPLATE would silently empty that field."""
@@ -431,7 +539,8 @@ class FormLabelTests(unittest.TestCase):
         wanted = {submission.F_LOOK, submission.F_AUTHOR,
                   submission.F_BASED_ON, submission.F_TAGS,
                   submission.F_DESCRIPTION, submission.F_FONT_URL,
-                  submission.F_VERSION, submission.F_SCREENSHOT}
+                  submission.F_VERSION, submission.F_SCREENSHOT,
+                  submission.F_KEYWORDS, submission.F_INSPIRED}
         self.assertLessEqual(wanted, self.labels("submit-look.yml"))
 
     def test_remove_form_carries_every_label_the_script_reads(self):

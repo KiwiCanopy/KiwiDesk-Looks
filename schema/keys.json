@@ -76,9 +76,16 @@
     "space_bar.focused_highlight_color"
   ],
   "tags": [
-    "dark", "light", "minimal", "colorful", "glass", "boxed",
-    "vertical", "bottom", "pastel", "high-contrast", "monochrome",
-    "playful", "calm"
+    "mono", "serif", "script", "pastel", "vibrant", "warm", "cool",
+    "minimal", "calm", "playful", "retro", "neon", "high-contrast"
+  ],
+  "auto_tags": [
+    "dark", "light", "glass", "boxed", "glow", "rounded", "square",
+    "vertical", "bottom", "slim", "gapless", "monochrome"
+  ],
+  "inspired_by": [
+    "gruvbox", "nord", "catppuccin", "dracula", "solarized",
+    "tokyo-night", "rose-pine", "everforest"
   ],
   "builtin_fonts_note": "Fonts listed in builtin-fonts.txt ship with macOS; any other font_family is listed under needs_fonts in index.json."
 }

@@ -31,21 +31,21 @@ body:
     id: tags
     attributes:
       label: Tags
-      description: Pick one to five.
+      description: Pick one to five that describe your look. Tags like dark, glass or rounded are added automatically from the file.
       options:
-        - label: dark
-        - label: light
-        - label: minimal
-        - label: colorful
-        - label: glass
-        - label: boxed
-        - label: vertical
-        - label: bottom
+        - label: mono
+        - label: serif
+        - label: script
         - label: pastel
-        - label: high-contrast
-        - label: monochrome
-        - label: playful
+        - label: vibrant
+        - label: warm
+        - label: cool
+        - label: minimal
         - label: calm
+        - label: playful
+        - label: retro
+        - label: neon
+        - label: high-contrast
   - type: input
     id: description
     attributes:
@@ -53,6 +53,26 @@ body:
       description: Up to 140 characters, no links.
     validations:
       required: true
+  - type: input
+    id: keywords
+    attributes:
+      label: Keywords
+      description: Optional, up to five words people might search for, separated by commas (e.g. lavender, soft). Lower-case letters, digits and hyphens.
+  - type: dropdown
+    id: inspired_by
+    attributes:
+      label: Inspired by
+      description: Optional. Only if your colors follow a known palette. Please don't call your look an official port or use its name in your look's name.
+      options:
+        - None
+        - gruvbox
+        - nord
+        - catppuccin
+        - dracula
+        - solarized
+        - tokyo-night
+        - rose-pine
+        - everforest
   - type: input
     id: font_url
     attributes:

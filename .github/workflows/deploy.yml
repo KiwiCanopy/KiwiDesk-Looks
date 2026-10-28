@@ -1,0 +1,46 @@
+# Rebuilds the KiwiDesk site after the gallery changed: once index.json
+# has changed, stayed unchanged for 15 minutes, and the last rebuild is
+# at least an hour old. The annotated tag `deployed` marks the last
+# rebuild. CF_PAGES_DEPLOY_HOOK is a credential: a secret, never a file.
+name: Deploy
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      HOOK: ${{ secrets.CF_PAGES_DEPLOY_HOOK }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Rebuild the site when due
+        run: |
+          [ -n "$HOOK" ] || { echo "::error::CF_PAGES_DEPLOY_HOOK is not set"; exit 1; }
+          now="$(date +%s)"
+          changed="$(git log -1 --format=%ct -- index.json)"
+          if git rev-parse -q --verify refs/tags/deployed >/dev/null; then
+            git diff --quiet deployed HEAD -- index.json && { echo "No change since the last rebuild"; exit 0; }
+            last="$(git for-each-ref --format='%(taggerdate:unix)' refs/tags/deployed)"
+          else
+            last=0
+          fi
+          if [ $((now - changed)) -lt 900 ]; then echo "Waiting for 15 quiet minutes"; exit 0; fi
+          if [ $((now - last)) -lt 3600 ]; then echo "Last rebuild under an hour ago"; exit 0; fi
+          curl -fsS -X POST "$HOOK" >/dev/null
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f -a deployed -m "Site rebuild requested"
+          git push -f origin refs/tags/deployed
+          echo "Site rebuild requested"
