@@ -72,7 +72,8 @@ Don't edit `index.json`: CI rebuilds it after each merge.
 ## Review
 
 I review every look before it goes live. CI warns me when a look is
-very close to one already here, or to one that was removed; that's a
+very close to one already here, to one still waiting for review, or
+to one that was removed; that's a
 prompt to look closer, never an automatic verdict.
 
 By submitting, you share your look under [CC BY 4.0](LICENSE) and

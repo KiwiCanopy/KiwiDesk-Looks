@@ -205,10 +205,11 @@ def submit(fields, login, fetch=download_screenshot, account=None):
         shutil.move(str(staging / ident), str(target))
         candidate = json.loads((target / "look.json").read_text())
         close = looksim.close_matches(candidate, skip=ident)
-        note = "".join(f"\n- {i}: {s:.0%} of its settings match"
-                       for i, s in close)
+        note = "".join(f"\n- {looksim.label(i, k)}: {s:.0%} of its "
+                       f"settings match" for i, s, k in close)
+        pending = [i for i, _, k in close if k == looksim.PENDING]
         return {"ok": True, "id": ident, "action": action, "close": note,
-                "message": ""}
+                "pending": pending, "message": ""}
     finally:
         shutil.rmtree(staging, ignore_errors=True)
 

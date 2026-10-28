@@ -97,4 +97,9 @@ jobs:
             gh pr create --head "$branch" --base main \
               --title "Look: $id" --body-file "$RUNNER_TEMP/pr.md"
             gh issue comment "$ISSUE" --body "Thanks! Your look passed the checks and is waiting for review."
+            # The earlier submission's own check never saw this one.
+            jq -r '.pending[]?' "$RUNNER_TEMP/result.json" | while read -r other; do
+              [[ "$other" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]] || continue
+              gh pr comment "submission/$other" --body "**Copy warning** (for review, not a verdict): the newer submission looks/$id from #$ISSUE is close to this look." || true
+            done
           fi

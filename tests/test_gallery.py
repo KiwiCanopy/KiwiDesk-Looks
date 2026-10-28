@@ -369,6 +369,54 @@ class ReviewFixTests(GalleryTestCase):
         self.assertEqual(looksim.match(tiny, tiny), 0.0)
 
 
+class PendingTests(unittest.TestCase):
+    """Two submissions waiting for review see each other."""
+
+    def setUp(self):
+        import subprocess
+        self.tmp = tempfile.TemporaryDirectory()
+        base = Path(self.tmp.name)
+        self.run = lambda *a, cwd=None: subprocess.run(
+            ["git", *a], cwd=cwd, check=True, capture_output=True)
+        self.run("init", "-q", "--bare", str(base / "origin.git"))
+        self.repo = base / "repo"
+        self.run("clone", "-q", str(base / "origin.git"), str(self.repo))
+        for key, value in (("user.name", "t"), ("user.email", "t@t")):
+            self.run("config", key, value, cwd=self.repo)
+        (self.repo / "looks").mkdir()
+        (self.repo / "looks" / ".gitkeep").write_text("")
+        self.run("add", ".", cwd=self.repo)
+        self.run("commit", "-qm", "init", cwd=self.repo)
+        self.run("push", "-q", "origin", "HEAD:main", cwd=self.repo)
+        self.run("checkout", "-qb", "submission/dusk", cwd=self.repo)
+        write_folder(self.repo / "looks", "dusk")
+        self.run("add", ".", cwd=self.repo)
+        self.run("commit", "-qm", "dusk", cwd=self.repo)
+        self.run("push", "-q", "origin", "submission/dusk", cwd=self.repo)
+        self.run("checkout", "-q", "main", cwd=self.repo)
+        self.saved = looksim.ROOT
+        looksim.ROOT = self.repo
+
+    def tearDown(self):
+        looksim.ROOT = self.saved
+        self.tmp.cleanup()
+
+    def test_a_waiting_submission_is_compared(self):
+        hits = looksim.close_matches(copy.deepcopy(LOOK), skip="dusk-again")
+        self.assertEqual([(i, k) for i, _, k in hits],
+                         [("dusk", looksim.PENDING)])
+
+    def test_its_own_branch_is_skipped(self):
+        self.assertEqual(looksim.close_matches(copy.deepcopy(LOOK),
+                                               skip="dusk"), [])
+
+    def test_a_merged_branch_counts_once_as_current(self):
+        write_folder(self.repo / "looks", "dusk")
+        hits = looksim.close_matches(copy.deepcopy(LOOK), skip="other")
+        self.assertEqual([(i, k) for i, _, k in hits],
+                         [("dusk", looksim.CURRENT)])
+
+
 class FormLabelTests(unittest.TestCase):
     """submission.py reads the forms by label, so a renamed label in
     .github/ISSUE_TEMPLATE would silently empty that field."""
