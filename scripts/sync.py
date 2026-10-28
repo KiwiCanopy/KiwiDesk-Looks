@@ -86,8 +86,8 @@ def like_body(name, author, ident):
     return (
         f"{marker(ident)}\n"
         f"**{plain(name)}** by {plain(author)}\n\n"
-        f"Leave a ❤️ or 👍 on this post to like the look. Each account "
-        f"counts once.\n\n"
+        f"Leave a reaction (❤️ 👍 🎉 …) on this post to like the look. "
+        f"Each account counts once.\n\n"
         f"See it in the gallery: {SITE}#{ident}"
     )
 
