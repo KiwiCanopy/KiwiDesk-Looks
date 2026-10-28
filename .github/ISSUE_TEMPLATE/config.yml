@@ -3,3 +3,6 @@ contact_links:
   - name: A question or a bug in KiwiDesk itself
     url: https://github.com/KiwiCanopy/KiwiDesk/issues
     about: The app has its own issue tracker.
+  - name: Questions or chat about looks
+    url: https://discord.gg/bYeTrJyZyS
+    about: Join the KiwiDesk Discord.
