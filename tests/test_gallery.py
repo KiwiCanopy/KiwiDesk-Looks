@@ -13,6 +13,7 @@ import build_index  # noqa: E402
 import lookcheck  # noqa: E402
 import looksim  # noqa: E402
 import looktags  # noqa: E402
+import previews  # noqa: E402
 import sync  # noqa: E402
 import submission  # noqa: E402
 
@@ -573,6 +574,60 @@ class FormLabelTests(unittest.TestCase):
         options = re.findall(r"- label: (.+)$", text, re.M)
         self.assertEqual(options, lookcheck.SCHEMA["tags"])
 
+
+
+FAKE_KIWIDESK = """#!/bin/sh
+[ "$1" = preview ] || exit 1
+if [ $# -ne 3 ]; then echo "usage: kiwidesk preview <look.json> <out.png>" >&2; exit 1; fi
+grep -q broken "$2" && { echo "error: not a look file" >&2; exit 1; }
+printf '\\211PNG\\r\\n\\032\\n' > "$3"
+"""
+
+
+class PreviewTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.looks = self.root / "looks"
+        self.binary = self.root / "kiwidesk"
+        self.binary.write_text(FAKE_KIWIDESK)
+        self.binary.chmod(0o755)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_a_kiwidesk_without_the_verb_is_not_supported(self):
+        old = self.root / "old"
+        old.write_text("#!/bin/sh\necho 'KiwiDesk: cannot connect' >&2\nexit 1\n")
+        old.chmod(0o755)
+        self.assertFalse(previews.supported(old))
+        self.assertTrue(previews.supported(self.binary))
+
+    def test_previews_are_drawn_and_indexed(self):
+        write_folder(self.looks, "dusk")
+        drawn, failed = previews.draw(self.binary, self.looks)
+        self.assertEqual((drawn, failed), (["dusk"], []))
+        self.assertEqual(lookcheck.check_folder(self.looks / "dusk"), [])
+        image = build_index.image(self.looks / "dusk")
+        self.assertEqual(image, {"kind": "preview",
+                                 "path": "looks/dusk/preview.png"})
+
+    def test_a_screenshot_replaces_the_preview(self):
+        folder = write_folder(self.looks, "dusk")
+        (folder / "preview.png").write_bytes(lookcheck.PNG_MAGIC)
+        (folder / "screenshot.png").write_bytes(lookcheck.PNG_MAGIC)
+        self.assertEqual(previews.draw(self.binary, self.looks), ([], []))
+        self.assertFalse((folder / "preview.png").exists())
+        self.assertEqual(build_index.image(folder)["kind"], "screenshot")
+
+    def test_a_failed_draw_drops_the_old_preview(self):
+        folder = write_folder(self.looks, "dusk")
+        (folder / "preview.png").write_bytes(lookcheck.PNG_MAGIC)
+        (folder / "look.json").write_text('{"broken": true}')
+        drawn, failed = previews.draw(self.binary, self.looks)
+        self.assertEqual([ident for ident, _ in failed], ["dusk"])
+        self.assertFalse((folder / "preview.png").exists())
+        self.assertIsNone(build_index.image(folder))
 
 if __name__ == "__main__":
     unittest.main()

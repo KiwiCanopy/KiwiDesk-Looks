@@ -2,7 +2,7 @@
 
 A folder under looks/ holds look.json (an exported KiwiDesk look,
 stamped with format, author and an optional based_on), meta.json
-and an optional screenshot.png. Every check returns messages a
+an optional screenshot.png and the preview.png CI draws. Every check returns messages a
 submitter can act on; an empty list means the folder is fine.
 
 Usage: python3 scripts/lookcheck.py [looks/<id> ...]
@@ -36,7 +36,8 @@ META_KEYS = {
     "kiwidesk_version", "keywords", "inspired_by",
 }
 KEYWORD = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
-ALLOWED_FILES = {"look.json", "meta.json", "screenshot.png"}
+# preview.png is drawn by scripts/previews.py after a merge.
+ALLOWED_FILES = {"look.json", "meta.json", "screenshot.png", "preview.png"}
 
 HEX = re.compile(r"^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$")
 ID = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
@@ -297,13 +298,15 @@ def check_folder(folder):
                 errors.append(
                     "high-contrast needs the bar's text and fill at 7:1 "
                     f"or more (this look: {ratio or 0:.1f}:1)")
-    shot = folder / "screenshot.png"
-    if shot.is_file() and not shot.is_symlink():
-        if shot.stat().st_size > MAX_SCREENSHOT:
-            errors.append("screenshot.png is larger than 2 MB")
-        with shot.open("rb") as handle:
+    for image in ("screenshot.png", "preview.png"):
+        path = folder / image
+        if not path.is_file() or path.is_symlink():
+            continue
+        if path.stat().st_size > MAX_SCREENSHOT:
+            errors.append(f"{image} is larger than 2 MB")
+        with path.open("rb") as handle:
             if handle.read(8) != PNG_MAGIC:
-                errors.append("screenshot.png is not a PNG image")
+                errors.append(f"{image} is not a PNG image")
     return errors
 
 

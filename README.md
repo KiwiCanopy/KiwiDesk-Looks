@@ -83,7 +83,8 @@ anything. Lua configs don't belong here.
 looks/purple-dreams/
 ├── look.json        the exported look
 ├── meta.json        tags, a one-line description, optional font link
-└── screenshot.png   optional
+├── screenshot.png   optional
+└── preview.png      drawn by CI when there is no screenshot
 ```
 
 CI checks every file on each pull request and rebuilds
