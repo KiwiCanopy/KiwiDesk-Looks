@@ -21,13 +21,42 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  previews:
+    # The latest KiwiDesk release draws each look's preview.png
+    # (scripts/previews.py); one too old for the verb draws none.
+    runs-on: macos-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get KiwiDesk
+        run: |
+          gh release download --repo KiwiCanopy/KiwiDesk \
+            --pattern 'KiwiDesk-*.zip' --dir "$RUNNER_TEMP/release"
+          ditto -x -k "$RUNNER_TEMP"/release/KiwiDesk-*.zip "$RUNNER_TEMP/app"
+      - run: python3 scripts/previews.py "$RUNNER_TEMP/app/KiwiDesk.app/Contents/MacOS/KiwiDesk"
+      - name: Commit when changed
+        run: |
+          [ -z "$(git status --porcelain -- looks)" ] && exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A looks
+          git commit -m "chore: draw look previews"
+          git pull --rebase -q
+          git push
+
   gallery:
+    # After the previews, so the index names them; a failed preview
+    # run never holds a look out of the index.
+    needs: previews
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
       - uses: actions/setup-python@v5
         with:

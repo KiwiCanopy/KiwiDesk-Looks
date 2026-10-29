@@ -48,12 +48,19 @@ def load_stats():
     return json.loads(STATS.read_text())
 
 
+def image(folder):
+    """The submitter's screenshot, else the preview CI drew, else none."""
+    for kind in ("screenshot", "preview"):
+        if (folder / f"{kind}.png").is_file():
+            return {"kind": kind, "path": f"looks/{folder.name}/{kind}.png"}
+    return None
+
+
 def entry(folder, stats=None):
     look = json.loads((folder / "look.json").read_text())
     meta = json.loads((folder / "meta.json").read_text())
     added, updated, version = history(folder)
     rel = f"looks/{folder.name}"
-    shot = folder / "screenshot.png"
     counts = (stats or {}).get(folder.name, {})
     auto = looktags.auto_tags(look)
     return {
@@ -76,8 +83,7 @@ def entry(folder, stats=None):
         "needs_fonts": lookcheck.needs_fonts(look),
         "font_url": meta.get("font_url"),
         "file": f"{rel}/look.json",
-        "image": {"kind": "screenshot", "path": f"{rel}/screenshot.png"}
-        if shot.is_file() else None,
+        "image": image(folder),
         "added": added,
         "updated": updated,
         "version": version,

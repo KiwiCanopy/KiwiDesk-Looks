@@ -10,7 +10,8 @@ request for you. This page is for people who'd rather open one by hand.
 looks/<id>/
 ├── look.json        required
 ├── meta.json        required
-└── screenshot.png   optional, PNG, 2 MB at most
+├── screenshot.png   optional, PNG, 2 MB at most
+└── preview.png      drawn by CI when there is no screenshot
 ```
 
 `<id>` is the look's name in lower case, words joined by `-`, and `&`
