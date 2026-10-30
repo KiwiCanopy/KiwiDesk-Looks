@@ -124,7 +124,8 @@ def build_submission(fields, login, staging, fetch=download_screenshot,
         return None, [f"the look file is not valid JSON: {error}"]
     if not isinstance(look, dict) or not isinstance(look.get("look"), dict):
         return None, ["paste the whole exported file, starting with {"]
-    look.setdefault("format", lookcheck.SCHEMA["look_format"])
+    # Only builds before the format stamp wrote a bare look.
+    look.setdefault("format", lookcheck.SCHEMA["bare_export_format"])
     look["author"] = fields.get(F_AUTHOR, "").strip() or login
     based_on = parse_based_on(fields.get(F_BASED_ON, ""))
     if based_on:

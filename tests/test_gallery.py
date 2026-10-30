@@ -18,7 +18,7 @@ import sync  # noqa: E402
 import submission  # noqa: E402
 
 LOOK = {
-    "format": 2,
+    "format": 3,
     "author": "Anna",
     "look": {
         "name": "Dusk",
@@ -93,6 +93,39 @@ class LookcheckTests(unittest.TestCase):
         errs = self.broken(lambda l: l["look"]["colors"].update(
             {"border.focused_color": "", "kiwishelf.item_color": "red"}))
         self.assertEqual(len(errs), 2, errs)
+
+    def test_format_3_keys_are_checked(self):
+        def edit(look):
+            look["look"]["style"].update({
+                "kiwishelf.reading_contrast": 2.2,
+                "kiwishelf.pocket_edge": "top",
+                "kiwishelf.pocket_position": 82,
+            })
+        self.assertEqual(self.broken(edit), [])
+
+    def test_format_3_values_are_refused_out_of_range(self):
+        def wrong(look):
+            look["look"]["style"].update({
+                "kiwishelf.reading_contrast": 5,
+                "kiwishelf.pocket_edge": "middle",
+                "kiwishelf.pocket_position": 101,
+            })
+        self.assertEqual(len(self.broken(wrong)), 3)
+
+    def test_retired_colors_pass_below_their_format(self):
+        drag = {"drag.ghost.fill_color": "#FFFFFF33",
+                "drag.drop_zone.border_color": "#FFFFFF"}
+
+        def older(look):
+            look["format"] = 2
+            look["look"]["colors"].update(drag)
+        self.assertEqual(self.broken(older), [])
+
+    def test_retired_colors_are_refused_at_their_format(self):
+        drag = {"drag.ghost.fill_color": "#FFFFFF33"}
+        errs = self.broken(lambda l: l["look"]["colors"].update(drag))
+        self.assertIn("color drag.ghost.fill_color is not a look color",
+                      errs)
 
     def test_newer_format_is_refused(self):
         errs = self.broken(lambda l: l.update({"format": 99}))
