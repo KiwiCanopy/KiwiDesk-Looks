@@ -124,8 +124,10 @@ def build_submission(fields, login, staging, fetch=download_screenshot,
         return None, [f"the look file is not valid JSON: {error}"]
     if not isinstance(look, dict) or not isinstance(look.get("look"), dict):
         return None, ["paste the whole exported file, starting with {"]
-    # Only builds before the format stamp wrote a bare look.
-    look.setdefault("format", lookcheck.SCHEMA["bare_export_format"])
+    if "format" not in look:
+        # Only KiwiDesk before 4.1 wrote a look without its format.
+        return None, ["this look comes from KiwiDesk 4.0 or older; "
+                      "update KiwiDesk and export it again"]
     look["author"] = fields.get(F_AUTHOR, "").strip() or login
     based_on = parse_based_on(fields.get(F_BASED_ON, ""))
     if based_on:

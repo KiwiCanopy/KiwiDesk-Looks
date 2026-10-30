@@ -1,7 +1,6 @@
 {
   "source": "KiwiCanopy/KiwiDesk@f188a9f87 (LookKeys, ColorPaletteKeys)",
   "look_format": 3,
-  "bare_export_format": 2,
   "style": {
     "kiwishelf.alignment": {"enum": ["start", "center", "end"]},
     "kiwishelf.order": {"enum": ["spaces_first", "apps_first"]},
@@ -69,12 +68,6 @@
     "floating.color",
     "pocket.color"
   ],
-  "retired_colors": {
-    "drag.ghost.border_color": 3,
-    "drag.ghost.fill_color": 3,
-    "drag.drop_zone.border_color": 3,
-    "drag.drop_zone.fill_color": 3
-  },
   "automatic_colors": [
     "sticky.color",
     "floating.color",

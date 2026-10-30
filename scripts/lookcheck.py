@@ -153,15 +153,6 @@ def check_look(data, errors):
     check_body(data, errors)
 
 
-def retired_colors(fmt):
-    """Colors KiwiDesk dropped at a later format, still valid in a
-    look written before it: the app leaves them out on import."""
-    if not isinstance(fmt, int) or isinstance(fmt, bool):
-        return set()
-    return {path for path, until in SCHEMA["retired_colors"].items()
-            if fmt < until}
-
-
 def check_body(data, errors):
     """The exported look itself: its name, style and colors."""
     body = data.get("look")
@@ -192,9 +183,8 @@ def check_body(data, errors):
         errors.append("look needs a colors map")
         return
     automatic = set(SCHEMA["automatic_colors"])
-    known = set(SCHEMA["colors"]) | retired_colors(data.get("format"))
     for path, value in sorted(colors.items()):
-        if path not in known:
+        if path not in SCHEMA["colors"]:
             errors.append(f"color {path} is not a look color")
         elif not isinstance(value, str):
             errors.append(f"color {path} must be a hex string")
