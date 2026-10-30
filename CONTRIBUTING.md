@@ -20,11 +20,11 @@ Nothing else may sit in the folder.
 
 ### look.json
 
-The file KiwiDesk's **Export…** writes, plus three keys:
+The file KiwiDesk's **Export…** writes, with your `author` added:
 
 ```json
 {
-  "format": 2,
+  "format": 3,
   "author": "Anna",
   "based_on": {"name": "Dusk", "author": "Maya", "id": "dusk"},
   "look": {
@@ -35,13 +35,17 @@ The file KiwiDesk's **Export…** writes, plus three keys:
 }
 ```
 
-- `format`: the look format, from `schema/keys.json` ▸ `look_format`.
+- `format`: the look format the file was written in, at most
+  `schema/keys.json` ▸ `look_format`. KiwiDesk 4.1 stamps it; an older
+  export has none, so add `2`.
 - `author`: the name shown on the card.
 - `based_on`: only if your look started from someone else's and still
   keeps about half of its settings. `id` is the original's folder when
   it came from this gallery.
 
-Every style path and color must be one `schema/keys.json` lists. A look
+Every style path and color must be one `schema/keys.json` lists. A
+color under `retired_colors` is still accepted in a look written below
+the format it names, since KiwiDesk leaves it out on import. A look
 is data only: no Lua, no scripts, no links.
 
 ### meta.json

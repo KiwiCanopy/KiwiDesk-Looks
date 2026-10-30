@@ -1,6 +1,7 @@
 {
-  "source": "KiwiCanopy/KiwiDesk@f40228118 (LookKeys, ColorPaletteKeys)",
-  "look_format": 2,
+  "source": "KiwiCanopy/KiwiDesk@f188a9f87 (LookKeys, ColorPaletteKeys)",
+  "look_format": 3,
+  "bare_export_format": 2,
   "style": {
     "kiwishelf.alignment": {"enum": ["start", "center", "end"]},
     "kiwishelf.order": {"enum": ["spaces_first", "apps_first"]},
@@ -22,7 +23,10 @@
     "kiwishelf.icon_source": {"enum": ["app_image", "app_font"]},
     "kiwishelf.dim_factor": {"number": [0, 1]},
     "kiwishelf.fill_fade": {"number": [0, 100]},
+    "kiwishelf.reading_contrast": {"number": [1, 4.5]},
     "kiwishelf.tint_hub_and_plates": {"bool": true},
+    "kiwishelf.pocket_edge": {"enum": ["top", "bottom", "left", "right"]},
+    "kiwishelf.pocket_position": {"number": [0, 100]},
     "space_bar.edge": {"enum": ["top", "bottom", "left", "right"]},
     "app_bar.edge": {"enum": ["top", "bottom", "left", "right"]},
     "space_bar.active_indicator": {"enum": ["outline", "edge_mark"]},
@@ -61,14 +65,16 @@
     "space_bar.focused_highlight_color",
     "border.focused_color",
     "border.unfocused_color",
-    "drag.ghost.border_color",
-    "drag.ghost.fill_color",
-    "drag.drop_zone.border_color",
-    "drag.drop_zone.fill_color",
     "sticky.color",
     "floating.color",
     "pocket.color"
   ],
+  "retired_colors": {
+    "drag.ghost.border_color": 3,
+    "drag.ghost.fill_color": 3,
+    "drag.drop_zone.border_color": 3,
+    "drag.drop_zone.fill_color": 3
+  },
   "automatic_colors": [
     "sticky.color",
     "floating.color",
