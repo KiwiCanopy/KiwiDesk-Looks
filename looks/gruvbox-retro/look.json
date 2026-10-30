@@ -5,10 +5,6 @@
     "colors": {
       "border.focused_color": "#D79921FF",
       "border.unfocused_color": "#D3D3D340",
-      "drag.drop_zone.border_color": "#83A598FF",
-      "drag.drop_zone.fill_color": "#83A59826",
-      "drag.ghost.border_color": "#D79921FF",
-      "drag.ghost.fill_color": "#D7992140",
       "floating.color": "",
       "kiwishelf.active_item_color": "#D79921FF",
       "kiwishelf.border_color": "#45475AFF",

@@ -112,16 +112,7 @@ class LookcheckTests(unittest.TestCase):
             })
         self.assertEqual(len(self.broken(wrong)), 3)
 
-    def test_retired_colors_pass_below_their_format(self):
-        drag = {"drag.ghost.fill_color": "#FFFFFF33",
-                "drag.drop_zone.border_color": "#FFFFFF"}
-
-        def older(look):
-            look["format"] = 2
-            look["look"]["colors"].update(drag)
-        self.assertEqual(self.broken(older), [])
-
-    def test_retired_colors_are_refused_at_their_format(self):
+    def test_retired_drag_colors_are_refused(self):
         drag = {"drag.ghost.fill_color": "#FFFFFF33"}
         errs = self.broken(lambda l: l["look"]["colors"].update(drag))
         self.assertIn("color drag.ghost.fill_color is not a look color",
@@ -244,8 +235,9 @@ def no_fetch(text, target):
 
 class SubmissionTests(GalleryTestCase):
     def exported(self):
-        """What KiwiDesk's Export… writes today: the look, bare."""
-        return {"look": copy.deepcopy(LOOK["look"])}
+        """What KiwiDesk's Export… writes since 4.1: the look and its
+        format."""
+        return {"format": 3, "look": copy.deepcopy(LOOK["look"])}
 
     def test_sections_parse_an_issue_form_body(self):
         body = "### Look file\n\n```json\n{}\n```\n\n### Font download link\n\n_No response_\n"
@@ -253,12 +245,18 @@ class SubmissionTests(GalleryTestCase):
         self.assertEqual(fields["Look file"], "```json\n{}\n```")
         self.assertEqual(fields["Font download link"], "")
 
-    def test_bare_export_is_stamped_and_added(self):
+    def test_bare_export_is_refused(self):
+        bare = {"look": copy.deepcopy(LOOK["look"])}
+        result = submission.submit(form(bare), "maya", no_fetch)
+        self.assertFalse(result["ok"], result)
+        self.assertIn("4.0 or older", result["message"])
+
+    def test_export_is_added(self):
         result = submission.submit(form(self.exported()), "maya", no_fetch)
         self.assertTrue(result["ok"], result)
         self.assertEqual(result["action"], "add")
         look = json.loads((self.looks / "dusk" / "look.json").read_text())
-        self.assertEqual(look["format"], 2)
+        self.assertEqual(look["format"], 3)
         self.assertEqual(look["author"], "maya")
         meta = json.loads((self.looks / "dusk" / "meta.json").read_text())
         self.assertEqual(meta["tags"], ["calm", "pastel"])
@@ -350,7 +348,7 @@ class ReviewFixTests(GalleryTestCase):
     def exported(self, name="Dusk"):
         body = copy.deepcopy(LOOK["look"])
         body["name"] = name
-        return {"look": body}
+        return {"format": 3, "look": body}
 
     def test_non_latin_name_gets_a_stable_id(self):
         ident = lookcheck.slug("夜")
@@ -400,7 +398,7 @@ class ReviewFixTests(GalleryTestCase):
         self.assertIn("couldn't be downloaded", error)
 
     def test_tiny_original_never_warns(self):
-        tiny = {"look": {"name": "T", "style": {"border.width": 4},
+        tiny = {"format": 3, "look": {"name": "T", "style": {"border.width": 4},
                          "colors": {}}}
         self.assertEqual(looksim.match(tiny, tiny), 0.0)
 
@@ -514,7 +512,7 @@ class TagTests(unittest.TestCase):
 
 class SubmissionFieldTests(GalleryTestCase):
     def test_keywords_and_inspired_by_are_read(self):
-        fields = form({"look": copy.deepcopy(LOOK["look"])}, **{
+        fields = form({"format": 3, "look": copy.deepcopy(LOOK["look"])}, **{
             submission.F_KEYWORDS: "Lavender, #soft  dreamy",
             submission.F_INSPIRED: "nord"})
         result = submission.submit(fields, "maya", no_fetch)
@@ -524,7 +522,7 @@ class SubmissionFieldTests(GalleryTestCase):
         self.assertEqual(meta["inspired_by"], "nord")
 
     def test_inspired_by_none_is_left_out(self):
-        fields = form({"look": copy.deepcopy(LOOK["look"])}, **{
+        fields = form({"format": 3, "look": copy.deepcopy(LOOK["look"])}, **{
             submission.F_INSPIRED: "None"})
         submission.submit(fields, "maya", no_fetch)
         meta = json.loads((self.looks / "dusk" / "meta.json").read_text())
