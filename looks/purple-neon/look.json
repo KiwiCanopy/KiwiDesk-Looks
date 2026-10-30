@@ -75,6 +75,7 @@
       "kiwishelf.liquid_glass": false,
       "kiwishelf.order": "spaces_first",
       "kiwishelf.outer_margin": 8,
+      "kiwishelf.pocket_edge": "top",
       "kiwishelf.thickness": 40,
       "kiwishelf.tint_hub_and_plates": true,
       "space_bar.active_dim_factor": 0.6,
