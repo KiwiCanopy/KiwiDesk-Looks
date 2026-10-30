@@ -1,6 +1,6 @@
 {
   "black-and-white-tiler": {
-    "asset_sha": "c00031ac203149edb329ce3b7773ce55b8fe964662c591c23f15690b2a9f3288",
+    "asset_sha": "6200c8a8af8a34a89f53b8e59956b529fc5b2b2fd2595dcf10c775d31fcb807b",
     "discussion": 14,
     "downloads": 0,
     "downloads_base": 0,
@@ -8,15 +8,15 @@
     "likes": 0
   },
   "gruvbox-retro": {
-    "asset_sha": "db5a099bb97c75415aec6e9a4438869f8145156ce714de4da41c65f805832fb8",
+    "asset_sha": "2862056d6685208f48f804a0f829a8f9980870b10a7509d2a61839e8ad22d24c",
     "discussion": 15,
     "downloads": 1,
-    "downloads_base": 0,
+    "downloads_base": 1,
     "like_url": "https://github.com/KiwiCanopy/KiwiDesk-Looks/discussions/15",
     "likes": 0
   },
   "purple-dreams": {
-    "asset_sha": "8541ff59554f0e7836fe21e990c125bee26d8f67f53bbcd5acab0e5e4efb296c",
+    "asset_sha": "ba39e89ec9626039760447368fe9b9181085e2bfd0dbdd0d2c61f9289ec6719f",
     "discussion": 5,
     "downloads": 0,
     "downloads_base": 0,
@@ -24,7 +24,7 @@
     "likes": 0
   },
   "purple-neon": {
-    "asset_sha": "dc6b7c82206646047f7e6c3c5c7a6c1e34af756bccd85d2a4c68b09aaca88940",
+    "asset_sha": "b6cc0edb7b5ae04faca7eaacc37cfa46c403e11c8759f3b785e68282cf5eadd8",
     "discussion": 13,
     "downloads": 0,
     "downloads_base": 0,

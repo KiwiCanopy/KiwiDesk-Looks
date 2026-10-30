@@ -34,8 +34,8 @@
         "minimal",
         "high-contrast"
       ],
-      "updated": "2026-10-28",
-      "version": 1
+      "updated": "2026-10-30",
+      "version": 3
     },
     {
       "added": "2026-10-28",
@@ -70,8 +70,8 @@
         "warm",
         "retro"
       ],
-      "updated": "2026-10-28",
-      "version": 1
+      "updated": "2026-10-30",
+      "version": 3
     },
     {
       "added": "2026-10-28",
@@ -110,8 +110,8 @@
         "pastel",
         "calm"
       ],
-      "updated": "2026-10-28",
-      "version": 1
+      "updated": "2026-10-30",
+      "version": 3
     },
     {
       "added": "2026-10-28",
@@ -147,8 +147,8 @@
         "vibrant",
         "neon"
       ],
-      "updated": "2026-10-28",
-      "version": 1
+      "updated": "2026-10-30",
+      "version": 3
     }
   ]
 }
