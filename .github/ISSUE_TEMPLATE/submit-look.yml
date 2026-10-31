@@ -79,6 +79,16 @@ body:
       label: Font download link
       description: Only if your look uses a font that doesn't ship with macOS. An https link where people can get it.
   - type: input
+    id: wallpaper
+    attributes:
+      label: Wallpaper
+      description: Optional. The wallpaper in your screenshot, with its artist if it has one, e.g. "Sequoia Dark (macOS)" or "Fog Valley by Anna". The gallery names it and never hosts the picture.
+  - type: input
+    id: wallpaper_url
+    attributes:
+      label: Wallpaper link
+      description: Optional, and only with a wallpaper name above. An https link to the page where people can get it, from its artist or a photo site. Leave it empty for a wallpaper that ships with macOS.
+  - type: input
     id: version
     attributes:
       label: KiwiDesk version

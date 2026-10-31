@@ -152,6 +152,26 @@ class LookcheckTests(unittest.TestCase):
         self.assertIn("font_url must be a single https:// link",
                       self.errors(meta=meta))
 
+    def test_wallpaper_url_must_be_https(self):
+        meta = dict(META, wallpaper="Fog", wallpaper_url="http://x.example")
+        self.assertIn("wallpaper_url must be a single https:// link",
+                      self.errors(meta=meta))
+
+    def test_wallpaper_url_needs_a_name(self):
+        meta = dict(META, wallpaper_url="https://x.example/fog")
+        self.assertIn("wallpaper_url needs a wallpaper name",
+                      self.errors(meta=meta))
+
+    def test_wallpaper_name_takes_no_link(self):
+        meta = dict(META, wallpaper="https://x.example/fog")
+        self.assertIn("wallpaper must not contain links or markup",
+                      self.errors(meta=meta))
+
+    def test_wallpaper_name_and_link_pass(self):
+        meta = dict(META, wallpaper="Fog Valley by Anna",
+                    wallpaper_url="https://x.example/fog")
+        self.assertEqual(self.errors(meta=meta), [])
+
     def test_extra_files_are_refused(self):
         folder = write_folder(self.root, "dusk")
         (folder / "init.lua").write_text("print(1)")
@@ -262,6 +282,17 @@ class SubmissionTests(GalleryTestCase):
         self.assertEqual(meta["tags"], ["calm", "pastel"])
         self.assertEqual(meta["submitted_by"], "maya")
 
+    def test_wallpaper_fields_reach_meta(self):
+        fields = form(self.exported(), **{
+            submission.F_WALLPAPER: "Fog Valley by Anna",
+            submission.F_WALLPAPER_URL: "https://x.example/fog",
+        })
+        result = submission.submit(fields, "maya", no_fetch)
+        self.assertTrue(result["ok"], result)
+        meta = json.loads((self.looks / "dusk" / "meta.json").read_text())
+        self.assertEqual(meta["wallpaper"], "Fog Valley by Anna")
+        self.assertEqual(meta["wallpaper_url"], "https://x.example/fog")
+
     def test_invalid_submission_reports_and_writes_nothing(self):
         bad = self.exported()
         bad["look"]["style"]["space_bar.visibility"] = "never"
@@ -335,6 +366,20 @@ class IndexTests(GalleryTestCase):
         self.assertIsNone(by_id["dusk"]["image"])
         self.assertEqual(build_index.render(index),
                          build_index.render(build_index.build(self.looks)))
+
+    def test_index_carries_the_wallpaper(self):
+        meta = dict(META, wallpaper="Fog Valley by Anna",
+                    wallpaper_url="https://x.example/fog")
+        write_folder(self.looks, "dusk", meta=meta)
+        write_folder(self.looks, "dawn", dict(LOOK, look=dict(
+            LOOK["look"], name="Dawn")))
+        by_id = {look["id"]: look
+                 for look in build_index.build(self.looks)["looks"]}
+        self.assertEqual(by_id["dusk"]["wallpaper"], "Fog Valley by Anna")
+        self.assertEqual(by_id["dusk"]["wallpaper_url"],
+                         "https://x.example/fog")
+        self.assertIsNone(by_id["dawn"]["wallpaper"])
+        self.assertIsNone(by_id["dawn"]["wallpaper_url"])
 
     def test_index_refuses_an_invalid_folder(self):
         bad = copy.deepcopy(LOOK)

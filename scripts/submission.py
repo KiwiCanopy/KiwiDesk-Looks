@@ -37,6 +37,8 @@ F_BASED_ON = "Based on"
 F_TAGS = "Tags"
 F_DESCRIPTION = "One-line description"
 F_FONT_URL = "Font download link"
+F_WALLPAPER = "Wallpaper"
+F_WALLPAPER_URL = "Wallpaper link"
 F_VERSION = "KiwiDesk version"
 F_SCREENSHOT = "Screenshot"
 F_KEYWORDS = "Keywords"
@@ -153,6 +155,8 @@ def build_submission(fields, login, staging, fetch=download_screenshot,
     if inspired and inspired != "None":
         meta["inspired_by"] = inspired
     for key, field in (("font_url", F_FONT_URL),
+                       ("wallpaper", F_WALLPAPER),
+                       ("wallpaper_url", F_WALLPAPER_URL),
                        ("kiwidesk_version", F_VERSION)):
         value = fields.get(field, "").strip()
         if value:

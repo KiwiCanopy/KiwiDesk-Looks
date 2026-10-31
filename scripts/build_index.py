@@ -82,6 +82,8 @@ def entry(folder, stats=None):
         "kiwidesk_version": meta.get("kiwidesk_version"),
         "needs_fonts": lookcheck.needs_fonts(look),
         "font_url": meta.get("font_url"),
+        "wallpaper": meta.get("wallpaper"),
+        "wallpaper_url": meta.get("wallpaper_url"),
         "file": f"{rel}/look.json",
         "image": image(folder),
         "added": added,

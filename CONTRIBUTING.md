@@ -56,7 +56,9 @@ is data only: no Lua, no scripts, no links.
   "inspired_by": "nord",
   "submitted_by": "your-github-name",
   "kiwidesk_version": "4.1.0",
-  "font_url": "https://example.com/the-font"
+  "font_url": "https://example.com/the-font",
+  "wallpaper": "Fog Valley by Anna",
+  "wallpaper_url": "https://example.com/fog-valley"
 }
 ```
 
@@ -69,6 +71,9 @@ describe, never claim an official port.
 `submitted_by` must be your GitHub account: it decides who may update
 or remove the look. The submission bot also records `submitted_by_id`,
 your account's number, so a renamed account keeps its looks. `font_url` only for a font macOS doesn't ship.
+`wallpaper` (optional) names the wallpaper in your screenshot, and
+`wallpaper_url` links the page it comes from. The gallery never stores
+the picture itself: it is rarely yours to share under CC BY 4.0.
 
 ## Check before you push
 

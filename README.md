@@ -82,7 +82,7 @@ anything. Lua configs don't belong here.
 ```
 looks/purple-dreams/
 ├── look.json        the exported look
-├── meta.json        tags, a one-line description, optional font link
+├── meta.json        tags, a one-line description, optional font and wallpaper links
 ├── screenshot.png   optional
 └── preview.png      drawn by CI when there is no screenshot
 ```
