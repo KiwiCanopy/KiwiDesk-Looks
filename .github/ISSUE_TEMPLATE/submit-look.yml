@@ -64,7 +64,6 @@ body:
       label: Inspired by
       description: Optional. Only if your colors follow a known palette. Please don't call your look an official port or use its name in your look's name.
       options:
-        - None
         - gruvbox
         - nord
         - catppuccin
