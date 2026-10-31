@@ -33,7 +33,8 @@ LOOK_BODY_KEYS = {"name", "style", "colors"}
 BASED_ON_KEYS = {"name", "author", "id", "removed"}
 META_KEYS = {
     "tags", "description", "font_url", "submitted_by", "submitted_by_id",
-    "kiwidesk_version", "keywords", "inspired_by",
+    "kiwidesk_version", "keywords", "inspired_by", "wallpaper",
+    "wallpaper_url",
 }
 KEYWORD = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 # preview.png is drawn by scripts/previews.py after a merge.
@@ -231,6 +232,17 @@ def check_meta(data, errors):
                             or not url.startswith("https://")
                             or len(url) > 300 or any(c.isspace() for c in url)):
         errors.append("font_url must be a single https:// link")
+    # The wallpaper is only named and linked, never stored: it is
+    # rarely the submitter's to license under CC BY 4.0.
+    plain_text(data.get("wallpaper"), "wallpaper", 80, errors,
+               required=False)
+    url = data.get("wallpaper_url")
+    if url is not None:
+        if (not isinstance(url, str) or not url.startswith("https://")
+                or len(url) > 300 or any(c.isspace() for c in url)):
+            errors.append("wallpaper_url must be a single https:// link")
+        if data.get("wallpaper") is None:
+            errors.append("wallpaper_url needs a wallpaper name")
     login = data.get("submitted_by")
     if not isinstance(login, str) or not LOGIN.match(login):
         errors.append("submitted_by must be a GitHub account name")
