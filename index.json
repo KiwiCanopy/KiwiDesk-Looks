@@ -17,7 +17,10 @@
       "file": "looks/black-and-white-tiler/look.json",
       "font_url": null,
       "id": "black-and-white-tiler",
-      "image": null,
+      "image": {
+        "kind": "preview",
+        "path": "looks/black-and-white-tiler/preview.png"
+      },
       "inspired_by": null,
       "keywords": [],
       "kiwidesk_version": "4.0.0",
@@ -34,7 +37,7 @@
         "minimal",
         "high-contrast"
       ],
-      "updated": "2026-10-30",
+      "updated": "2026-11-01",
       "version": 3,
       "wallpaper": null,
       "wallpaper_url": null
@@ -51,11 +54,14 @@
       "built_on": [],
       "description": "Warm gruvbox colors with a serif touch.",
       "download_url": "https://github.com/KiwiCanopy/KiwiDesk-Looks/releases/download/looks/gruvbox-retro.json",
-      "downloads": 1,
+      "downloads": 2,
       "file": "looks/gruvbox-retro/look.json",
       "font_url": null,
       "id": "gruvbox-retro",
-      "image": null,
+      "image": {
+        "kind": "preview",
+        "path": "looks/gruvbox-retro/preview.png"
+      },
       "inspired_by": "gruvbox",
       "keywords": [],
       "kiwidesk_version": "4.0.0",
@@ -72,7 +78,7 @@
         "warm",
         "retro"
       ],
-      "updated": "2026-10-30",
+      "updated": "2026-11-01",
       "version": 3,
       "wallpaper": null,
       "wallpaper_url": null
@@ -95,7 +101,10 @@
       "file": "looks/purple-dreams/look.json",
       "font_url": null,
       "id": "purple-dreams",
-      "image": null,
+      "image": {
+        "kind": "preview",
+        "path": "looks/purple-dreams/preview.png"
+      },
       "inspired_by": null,
       "keywords": [],
       "kiwidesk_version": "4.0.0",
@@ -114,7 +123,7 @@
         "pastel",
         "calm"
       ],
-      "updated": "2026-10-30",
+      "updated": "2026-11-01",
       "version": 3,
       "wallpaper": null,
       "wallpaper_url": null
@@ -132,11 +141,14 @@
       "built_on": [],
       "description": "Saturated violet with a glowing border.",
       "download_url": "https://github.com/KiwiCanopy/KiwiDesk-Looks/releases/download/looks/purple-neon.json",
-      "downloads": 0,
+      "downloads": 2,
       "file": "looks/purple-neon/look.json",
       "font_url": null,
       "id": "purple-neon",
-      "image": null,
+      "image": {
+        "kind": "preview",
+        "path": "looks/purple-neon/preview.png"
+      },
       "inspired_by": null,
       "keywords": [],
       "kiwidesk_version": "4.0.0",
@@ -153,7 +165,7 @@
         "vibrant",
         "neon"
       ],
-      "updated": "2026-10-30",
+      "updated": "2026-11-01",
       "version": 3,
       "wallpaper": null,
       "wallpaper_url": null
