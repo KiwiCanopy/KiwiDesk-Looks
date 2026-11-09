@@ -13,7 +13,7 @@
       "built_on": [],
       "description": "Hard edges, monospaced, black and white.",
       "download_url": "https://github.com/KiwiCanopy/KiwiDesk-Looks/releases/download/looks/black-and-white-tiler.json",
-      "downloads": 5,
+      "downloads": 6,
       "file": "looks/black-and-white-tiler/look.json",
       "font_url": null,
       "id": "black-and-white-tiler",
@@ -37,7 +37,7 @@
         "minimal",
         "high-contrast"
       ],
-      "updated": "2026-11-01",
+      "updated": "2026-11-09",
       "version": 3,
       "wallpaper": null,
       "wallpaper_url": null
@@ -54,7 +54,7 @@
       "built_on": [],
       "description": "Warm gruvbox colors with a serif touch.",
       "download_url": "https://github.com/KiwiCanopy/KiwiDesk-Looks/releases/download/looks/gruvbox-retro.json",
-      "downloads": 6,
+      "downloads": 7,
       "file": "looks/gruvbox-retro/look.json",
       "font_url": null,
       "id": "gruvbox-retro",
@@ -78,7 +78,7 @@
         "warm",
         "retro"
       ],
-      "updated": "2026-11-01",
+      "updated": "2026-11-09",
       "version": 3,
       "wallpaper": null,
       "wallpaper_url": null
@@ -123,7 +123,7 @@
         "pastel",
         "calm"
       ],
-      "updated": "2026-11-01",
+      "updated": "2026-11-09",
       "version": 3,
       "wallpaper": null,
       "wallpaper_url": null
@@ -141,7 +141,7 @@
       "built_on": [],
       "description": "Saturated violet with a glowing border.",
       "download_url": "https://github.com/KiwiCanopy/KiwiDesk-Looks/releases/download/looks/purple-neon.json",
-      "downloads": 7,
+      "downloads": 8,
       "file": "looks/purple-neon/look.json",
       "font_url": null,
       "id": "purple-neon",
@@ -165,7 +165,7 @@
         "vibrant",
         "neon"
       ],
-      "updated": "2026-11-01",
+      "updated": "2026-11-09",
       "version": 3,
       "wallpaper": null,
       "wallpaper_url": null
